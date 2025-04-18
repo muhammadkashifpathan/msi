@@ -12,7 +12,10 @@
     <div class="container">
         <header>
             <div class="app-title">
-                <h1>Medical Store Inventory</h1>
+                <div class="title-container">
+                    <i class="fas fa-pills app-icon"></i>
+                    <h1>Medical Store Inventory</h1>
+                </div>
                 <button id="theme-toggle" aria-label="Toggle dark/light mode">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -26,7 +29,7 @@
                         <input type="text" id="medicine-name" required placeholder="Enter medicine name">
                     </div>
                     <div class="form-group">
-                        <label for="medicine-price">Price (₹)</label>
+                        <label for="medicine-price">Price (PKR)</label>
                         <input type="number" id="medicine-price" required min="0" step="0.01" placeholder="Enter price">
                     </div>
                     <div class="form-group">
@@ -71,7 +74,7 @@
                     </div>
                     <div class="summary-item">
                         <h3>Inventory Value</h3>
-                        <p id="total-value">₹0.00</p>
+                        <p id="total-value">PKR 0.00</p>
                     </div>
                 </div>
 
@@ -80,8 +83,9 @@
                         <thead>
                             <tr>
                                 <th>Medicine Name</th>
-                                <th>Price (₹)</th>
+                                <th>Price (PKR)</th>
                                 <th>Quantity</th>
+                                <th>Total Price (PKR)</th>
                                 <th>Date/Time</th>
                                 <th>Actions</th>
                             </tr>
@@ -113,7 +117,7 @@
                     <input type="text" id="edit-name" required>
                 </div>
                 <div class="form-group">
-                    <label for="edit-price">Price (₹)</label>
+                    <label for="edit-price">Price (PKR)</label>
                     <input type="number" id="edit-price" required min="0" step="0.01">
                 </div>
                 <div class="form-group">

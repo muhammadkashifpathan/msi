@@ -154,10 +154,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dateObj = new Date(medicine.dateTime);
                 const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 
+                // Calculate total price for this medicine
+                const totalPrice = medicine.price * medicine.quantity;
+                
                 tr.innerHTML = `
                     <td data-label="Medicine Name">${medicine.name}</td>
-                    <td data-label="Price (₹)">${medicine.price.toFixed(2)}</td>
+                    <td data-label="Price (PKR)">${medicine.price.toFixed(2)}</td>
                     <td data-label="Quantity">${medicine.quantity}</td>
+                    <td data-label="Total Price (PKR)">${totalPrice.toFixed(2)}</td>
                     <td data-label="Date/Time">${formattedDate}</td>
                     <td data-label="Actions">
                         <div class="action-icons">
@@ -207,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 0);
         
         totalMedicinesEl.textContent = totalMedicines;
-        totalValueEl.textContent = `₹${totalValue.toFixed(2)}`;
+        totalValueEl.textContent = `PKR ${totalValue.toFixed(2)}`;
     }
     
     /**
@@ -313,17 +317,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Create CSV header row
-        let csvContent = 'Medicine Name,Price,Quantity,Date/Time\n';
+        let csvContent = 'Medicine Name,Price (PKR),Quantity,Total Price (PKR),Date/Time\n';
         
         // Add medicine data rows
         medicines.forEach(medicine => {
             const dateObj = new Date(medicine.dateTime);
             const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString()}`;
+            const totalPrice = medicine.price * medicine.quantity;
             
             // Escape commas in name if present
             const escapedName = medicine.name.includes(',') ? `"${medicine.name}"` : medicine.name;
             
-            csvContent += `${escapedName},${medicine.price.toFixed(2)},${medicine.quantity},"${formattedDate}"\n`;
+            csvContent += `${escapedName},${medicine.price.toFixed(2)},${medicine.quantity},${totalPrice.toFixed(2)},"${formattedDate}"\n`;
         });
         
         // Create CSV data blob
