@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Store Inventory</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="app-title">
+                <h1>Medical Store Inventory</h1>
+                <button id="theme-toggle" aria-label="Toggle dark/light mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <section class="add-medicine-section">
+                <h2>Add New Medicine</h2>
+                <form id="add-medicine-form">
+                    <div class="form-group">
+                        <label for="medicine-name">Medicine Name</label>
+                        <input type="text" id="medicine-name" required placeholder="Enter medicine name">
+                    </div>
+                    <div class="form-group">
+                        <label for="medicine-price">Price (₹)</label>
+                        <input type="number" id="medicine-price" required min="0" step="0.01" placeholder="Enter price">
+                    </div>
+                    <div class="form-group">
+                        <label for="medicine-quantity">Quantity</label>
+                        <input type="number" id="medicine-quantity" required min="1" placeholder="Enter quantity">
+                    </div>
+                    <button type="submit" id="add-medicine-btn">Add Medicine</button>
+                </form>
+            </section>
+        </header>
+
+        <main>
+            <section class="inventory-section">
+                <div class="inventory-header">
+                    <h2>Inventory</h2>
+                    <div class="inventory-actions">
+                        <div class="search-container">
+                            <input type="text" id="search-input" placeholder="Search by medicine name...">
+                            <i class="fas fa-search search-icon"></i>
+                        </div>
+                        <div class="sort-container">
+                            <label for="sort-select">Sort by:</label>
+                            <select id="sort-select">
+                                <option value="name-asc">Name (A-Z)</option>
+                                <option value="name-desc">Name (Z-A)</option>
+                                <option value="price-asc">Price (Low-High)</option>
+                                <option value="price-desc">Price (High-Low)</option>
+                                <option value="date-asc">Date (Oldest-Newest)</option>
+                                <option value="date-desc">Date (Newest-Oldest)</option>
+                            </select>
+                        </div>
+                        <button id="export-csv" class="action-btn">
+                            <i class="fas fa-file-export"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="inventory-summary">
+                    <div class="summary-item">
+                        <h3>Total Medicines</h3>
+                        <p id="total-medicines">0</p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Inventory Value</h3>
+                        <p id="total-value">₹0.00</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>Medicine Name</th>
+                                <th>Price (₹)</th>
+                                <th>Quantity</th>
+                                <th>Date/Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-body">
+                            <!-- Inventory items will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div id="empty-state" class="empty-state">
+                        <i class="fas fa-prescription-bottle-alt empty-icon"></i>
+                        <p>No medicines in inventory yet.<br>Add your first medicine to get started.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for editing medicine -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Medicine</h2>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <form id="edit-medicine-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label for="edit-name">Medicine Name</label>
+                    <input type="text" id="edit-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-price">Price (₹)</label>
+                    <input type="number" id="edit-price" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="edit-quantity">Quantity</label>
+                    <input type="number" id="edit-quantity" required min="1">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancel-edit" class="cancel-btn">Cancel</button>
+                    <button type="submit" id="save-edit" class="save-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content confirm-content">
+            <div class="modal-header">
+                <h2>Confirm Deletion</h2>
+            </div>
+            <p id="confirm-message">Are you sure you want to delete this medicine?</p>
+            <div class="modal-footer">
+                <button id="cancel-delete" class="cancel-btn">Cancel</button>
+                <button id="confirm-delete" class="delete-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
