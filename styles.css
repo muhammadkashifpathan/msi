@@ -198,8 +198,13 @@ button {
 
 .export-options {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
+    margin-top: 15px;
+    width: 100%;
+    justify-content: space-between;
+    border-top: 1px solid var(--border-color);
+    padding-top: 15px;
 }
 
 .search-container {
@@ -232,11 +237,21 @@ button {
     color: white;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
+    padding: 10px 15px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    flex: 1;
+    min-width: 90px;
+    max-width: 150px;
 }
 
 .action-btn:hover {
     background-color: #3a7ab7;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .pdf-btn {
@@ -293,18 +308,23 @@ button {
 .table-container {
     overflow-x: auto;
     position: relative;
+    width: 100%;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px;
+    white-space: nowrap; /* Prevent text wrapping */
 }
 
 th, td {
     padding: 15px 20px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 th {
