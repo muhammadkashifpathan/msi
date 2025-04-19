@@ -40,10 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
     
-    // Current medicine ID to delete
+    // Variables for deletion and restoration
     let currentDeleteId = null;
     let currentRestoreId = null;
-    let currentOperation = 'delete'; // 'delete' or 'restore'
+    let currentOperation = 'delete'; // 'delete', 'permanent-delete', or 'restore'
     
     // Initialize medicines array from localStorage
     let medicines = JSON.parse(localStorage.getItem('medicines')) || [];
@@ -54,11 +54,31 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeToggleIcon(savedTheme);
     
-    // Render initial inventory
+    // Render initial inventory and trash
     renderInventory();
+    renderTrash();
     updateInventorySummary();
+    updateTrashCounter();
+    
+    // Initialize tabs
+    showPanel('inventory');
     
     // Event Listeners
+    
+    // Tab switching
+    document.getElementById('inventory-tab').addEventListener('click', () => {
+        showPanel('inventory');
+    });
+    
+    document.getElementById('trash-tab-main').addEventListener('click', () => {
+        showPanel('trash');
+    });
+    
+    if (document.getElementById('trash-tab')) {
+        document.getElementById('trash-tab').addEventListener('click', () => {
+            showPanel('trash');
+        });
+    }
     
     // Add medicine form submission
     addMedicineForm.addEventListener('submit', (e) => {
@@ -96,10 +116,14 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelEditBtn.addEventListener('click', () => closeModal(editModal));
     cancelDeleteBtn.addEventListener('click', () => closeModal(confirmModal));
     
-    // Confirm delete button
+    // Confirm delete/permanently delete button
     confirmDeleteBtn.addEventListener('click', () => {
         if (currentDeleteId !== null) {
-            deleteMedicine(currentDeleteId);
+            if (currentOperation === 'permanent-delete') {
+                permanentlyDeleteMedicine(currentDeleteId);
+            } else {
+                deleteMedicine(currentDeleteId);
+            }
             closeModal(confirmModal);
             currentDeleteId = null;
         }
@@ -269,6 +293,75 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-quantity').value = medicine.quantity;
         
         openModal(editModal);
+    }
+
+    /**
+     * Renders the trash table
+     */
+    function renderTrash() {
+        const trashBody = document.getElementById('trash-body');
+        const emptyTrashState = document.getElementById('empty-trash-state');
+        
+        // Clear current table contents
+        trashBody.innerHTML = '';
+        
+        // Show empty state if no items in trash
+        if (trashItems.length === 0) {
+            emptyTrashState.style.display = 'flex';
+        } else {
+            emptyTrashState.style.display = 'none';
+            
+            // Add trash items to table
+            trashItems.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                const addedDate = new Date(item.dateTime);
+                const deletedDate = new Date(item.deletedAt);
+                const formattedDeletedDate = `${deletedDate.toLocaleDateString()} ${deletedDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                
+                // Calculate days in trash
+                const currentDate = new Date();
+                const daysInTrash = Math.floor((currentDate - deletedDate) / (1000 * 60 * 60 * 24));
+                
+                // Calculate total price
+                const totalPrice = item.price * item.quantity;
+                
+                tr.innerHTML = `
+                    <td data-label="Medicine Name">${item.name}</td>
+                    <td data-label="Price (PKR)">${item.price.toFixed(2)}</td>
+                    <td data-label="Quantity">${item.quantity}</td>
+                    <td data-label="Total Price (PKR)">${totalPrice.toFixed(2)}</td>
+                    <td data-label="Deleted On">${formattedDeletedDate}</td>
+                    <td data-label="Days in Trash">${daysInTrash}</td>
+                    <td data-label="Actions">
+                        <div class="action-icons">
+                            <button class="restore-btn" data-id="${item.id}" title="Restore to Inventory"><i class="fas fa-undo-alt"></i></button>
+                            <button class="permanent-delete-btn" data-id="${item.id}" title="Delete Permanently"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </td>
+                `;
+                
+                trashBody.appendChild(tr);
+            });
+            
+            // Add event listeners to restore and permanent delete buttons
+            addTrashButtonListeners();
+        }
+    }
+
+    /**
+     * Updates the trash counter
+     */
+    function updateTrashCounter() {
+        const trashCounter = document.getElementById('trash-counter');
+        trashCounter.textContent = trashItems.length;
+        
+        // Hide counter if trash is empty
+        if (trashItems.length === 0) {
+            trashCounter.style.display = 'none';
+        } else {
+            trashCounter.style.display = 'flex';
+        }
     }
     
     /**
