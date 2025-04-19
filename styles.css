@@ -627,6 +627,10 @@ tr:hover td {
 
 /* Responsive Styles */
 @media (max-width: 768px) {
+    .title-container h1,
+    .title-container i {
+        font-size: 1.5rem;
+    }
     .inventory-header {
         flex-direction: column;
         align-items: flex-start;
@@ -666,11 +670,6 @@ tr:hover td {
         padding: 8px 10px; /* Smaller padding on mobile */
     }
     
-    .export-options {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
     .export-options .action-btn {
         margin-bottom: 5px;
     }
@@ -680,7 +679,12 @@ tr:hover td {
     .container {
         padding: 10px;
     }
-    
+    .app-controls {
+        gap: 5px;
+    }
+    .app-controls button, .app-controls div button {
+        padding: 0;
+    }
     form {
         grid-template-columns: 1fr;
     }

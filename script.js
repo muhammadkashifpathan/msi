@@ -105,9 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Export buttons
     exportCSVBtn.addEventListener('click', exportToCSV);
-    exportPDFBtn.addEventListener('click', exportToPDF);
     exportExcelBtn.addEventListener('click', exportToExcel);
     exportWordBtn.addEventListener('click', exportToWord);
+    document.getElementById('print-inventory').addEventListener('click', printInventory);
+    document.getElementById('download-pdf').addEventListener('click', downloadPDF);
 
     // Theme toggle
     themeToggleBtn.addEventListener('click', toggleTheme);
@@ -390,26 +391,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderTrash() {
         // Clear current table contents
         trashBody.innerHTML = '';
-    
+
         // Show empty state if no trash items
         if (trashItems.length === 0) {
             emptyTrashState.style.display = 'flex';
         } else {
             emptyTrashState.style.display = 'none';
-    
+
             // Add trash items to table
             trashItems.forEach(item => {
                 const tr = document.createElement('tr');
-    
+
                 // Calculate days in trash
                 const deletedDate = new Date(item.deletedAt);
                 const currentDate = new Date();
                 const daysInTrash = Math.floor((currentDate - deletedDate) / (1000 * 60 * 60 * 24));
-    
+
                 // Get the auto-delete duration
                 const autoDeleteSetting = localStorage.getItem('autoDeleteDays') || 'never';
                 const autoDeleteText = autoDeleteSetting === 'never' ? 'Never' : `${autoDeleteSetting} days`;
-    
+
                 tr.innerHTML = `
                     <td>${item.name}</td>
                     <td>PKR ${item.price.toFixed(2)}</td>
@@ -427,10 +428,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         </button>
                     </td>
                 `;
-    
+
                 trashBody.appendChild(tr);
             });
-    
+
             // Add event listeners to restore and permanent delete buttons
             addTrashButtonListeners();
         }
@@ -937,17 +938,113 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Exports inventory data to PDF file
      */
-    function exportToPDF() {
+    // function exportToPDF() {
+    //     if (medicines.length === 0) {
+    //         showToast('No data to export', 'error');
+    //         return;
+    //     }
+
+    //     // Create a hidden div to hold the table for PDF generation
+    //     const printDiv = document.createElement('div');
+    //     printDiv.style.display = 'none';
+
+    //     // Create the HTML table structure for PDF
+    //     let tableHTML = `
+    //         <html>
+    //         <head>
+    //             <title>Medical Inventory Report</title>
+    //             <style>
+    //                 body { font-family: Arial, sans-serif; }
+    //                 h2 { color: #4a8cca; text-align: center; margin-bottom: 20px; }
+    //                 table { width: 100%; border-collapse: collapse; }
+    //                 th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
+    //                 th { background-color: #f8f9fa; font-weight: bold; }
+    //                 .summary { margin-top: 20px; text-align: right; font-weight: bold; }
+    //                 .header { text-align: center; margin-bottom: 30px; }
+    //                 .date { text-align: right; margin-bottom: 20px; color: #6c757d; }
+    //             </style>
+    //         </head>
+    //         <body>
+    //             <div class="header">
+    //                 <h2>Medical Store Inventory Report</h2>
+    //             </div>
+    //             <div class="date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+    //             <table>
+    //                 <thead>
+    //                     <tr>
+    //                         <th>Medicine Name</th>
+    //                         <th>Price (PKR)</th>
+    //                         <th>Quantity</th>
+    //                         <th>Total Price (PKR)</th>
+    //                         <th>Date/Time</th>
+    //                     </tr>
+    //                 </thead>
+    //                 <tbody>
+    //     `;
+
+    //     // Add data rows
+    //     medicines.forEach(medicine => {
+    //         const dateObj = new Date(medicine.dateTime);
+    //         const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    //         const totalPrice = medicine.price * medicine.quantity;
+
+    //         tableHTML += `
+    //             <tr>
+    //                 <td>${medicine.name}</td>
+    //                 <td>${medicine.price.toFixed(2)}</td>
+    //                 <td>${medicine.quantity}</td>
+    //                 <td>${totalPrice.toFixed(2)}</td>
+    //                 <td>${formattedDate}</td>
+    //             </tr>
+    //         `;
+    //     });
+
+    //     // Calculate total inventory value
+    //     const totalInventoryValue = medicines.reduce((sum, medicine) => {
+    //         return sum + (medicine.price * medicine.quantity);
+    //     }, 0);
+
+    //     // Add summary
+    //     tableHTML += `
+    //                 </tbody>
+    //             </table>
+    //             <div class="summary">
+    //                 <p>Total Medicines: ${medicines.length}</p>
+    //                 <p>Total Inventory Value: PKR ${totalInventoryValue.toFixed(2)}</p>
+    //             </div>
+    //         </body>
+    //         </html>
+    //     `;
+
+    //     printDiv.innerHTML = tableHTML;
+    //     document.body.appendChild(printDiv);
+
+    //     // Create a temporary window to print from
+    //     const win = window.open('', '', 'height=700,width=700');
+    //     win.document.write(tableHTML);
+    //     win.document.close();
+
+    //     // Wait for window to load before printing
+    //     win.onload = function () {
+    //         win.focus();
+    //         win.print();
+    //         win.close();
+    //         document.body.removeChild(printDiv);
+    //     };
+
+    //     showToast('Inventory exported to PDF successfully');
+    // }
+    function printInventory() {
         if (medicines.length === 0) {
-            showToast('No data to export', 'error');
+            showToast('No data to print', 'error');
             return;
         }
 
-        // Create a hidden div to hold the table for PDF generation
+        // Create a hidden div to hold the table for printing
         const printDiv = document.createElement('div');
         printDiv.style.display = 'none';
 
-        // Create the HTML table structure for PDF
+        // Create the HTML table structure for printing
         let tableHTML = `
             <html>
             <head>
@@ -1031,6 +1128,100 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.removeChild(printDiv);
         };
 
+        showToast('Inventory printed successfully');
+    }
+
+
+    // Export inventory data to Pdf file
+    // function downloadPDF() {
+    //     if (medicines.length === 0) {
+    //         showToast('No data to export', 'error');
+    //         return;
+    //     }
+
+    //     const doc = new jsPDF();
+
+    //     // Add title
+    //     doc.setFontSize(18);
+    //     doc.text('Medical Store Inventory Report', 105, 20, { align: 'center' });
+
+    //     // Add date
+    //     doc.setFontSize(12);
+    //     doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 30, { align: 'center' });
+
+    //     // Add table headers
+    //     const headers = ['Medicine Name', 'Price (PKR)', 'Quantity', 'Total Price (PKR)', 'Date/Time'];
+    //     const data = medicines.map(medicine => {
+    //         const dateObj = new Date(medicine.dateTime);
+    //         const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    //         const totalPrice = medicine.price * medicine.quantity;
+    //         return [medicine.name, medicine.price.toFixed(2), medicine.quantity, totalPrice.toFixed(2), formattedDate];
+    //     });
+
+    //     // Add table to PDF
+    //     doc.autoTable({
+    //         head: [headers],
+    //         body: data,
+    //         startY: 40,
+    //         theme: 'grid',
+    //         headStyles: { fillColor: [74, 140, 202] },
+    //     });
+
+    //     // Add summary
+    //     const totalMedicines = medicines.length;
+    //     const totalValue = medicines.reduce((sum, medicine) => sum + (medicine.price * medicine.quantity), 0);
+    //     doc.text(`Total Medicines: ${totalMedicines}`, 14, doc.lastAutoTable.finalY + 10);
+    //     doc.text(`Total Inventory Value: PKR ${totalValue.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 20);
+
+    //     // Save the PDF
+    //     doc.save(`medical-inventory-${new Date().toISOString().split('T')[0]}.pdf`);
+    //     showToast('Inventory exported to PDF successfully');
+    // }
+    function downloadPDF() {
+        if (medicines.length === 0) {
+            showToast('No data to export', 'error');
+            return;
+        }
+    
+        // Import jsPDF and autoTable
+        const { jsPDF } = window.jspdf;
+    
+        const doc = new jsPDF();
+    
+        // Add title
+        doc.setFontSize(18);
+        doc.text('Medical Store Inventory Report', 105, 20, { align: 'center' });
+    
+        // Add date
+        doc.setFontSize(12);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 30, { align: 'center' });
+    
+        // Add table headers and data
+        const headers = ['Medicine Name', 'Price (PKR)', 'Quantity', 'Total Price (PKR)', 'Date/Time'];
+        const data = medicines.map(medicine => {
+            const dateObj = new Date(medicine.dateTime);
+            const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            const totalPrice = medicine.price * medicine.quantity;
+            return [medicine.name, medicine.price.toFixed(2), medicine.quantity, totalPrice.toFixed(2), formattedDate];
+        });
+    
+        // Add table to PDF
+        doc.autoTable({
+            head: [headers],
+            body: data,
+            startY: 40,
+            theme: 'grid',
+            headStyles: { fillColor: [74, 140, 202] },
+        });
+    
+        // Add summary
+        const totalMedicines = medicines.length;
+        const totalValue = medicines.reduce((sum, medicine) => sum + (medicine.price * medicine.quantity), 0);
+        doc.text(`Total Medicines: ${totalMedicines}`, 14, doc.lastAutoTable.finalY + 10);
+        doc.text(`Total Inventory Value: PKR ${totalValue.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 20);
+    
+        // Save the PDF
+        doc.save(`medical-inventory-${new Date().toISOString().split('T')[0]}.pdf`);
         showToast('Inventory exported to PDF successfully');
     }
 
