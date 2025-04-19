@@ -149,17 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Set up auto-delete select
-    // if (autoDeleteSelect) {
-    //     const savedAutoDelete = localStorage.getItem('autoDeleteDays') || 'never';
-    //     autoDeleteSelect.value = savedAutoDelete;
-
-    //     autoDeleteSelect.addEventListener('change', function() {
-    //         localStorage.setItem('autoDeleteDays', this.value);
-    //         checkAutoDelete();
-    //         showToast(`Auto-delete set to: ${getAutoDeleteText(this.value)}`);
-    //     });
-    // }
     if (autoDeleteSelect) {
         autoDeleteSelect.addEventListener('change', function () {
             localStorage.setItem('autoDeleteDays', this.value);
@@ -168,44 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Confirm delete/permanently delete button
-    // confirmDeleteBtn.addEventListener('click', () => {
-    //     if (currentDeleteId !== null || currentOperation === 'empty-trash' || currentOperation === 'restore-all') {
-    //         if (currentOperation === 'permanent-delete') {
-    //             permanentlyDeleteMedicine(currentDeleteId);
-    //         } else if (currentOperation === 'delete') {
-    //             deleteMedicine(currentDeleteId);
-    //         } else if (currentOperation === 'empty-trash') {
-    //             emptyTrash();
-    //         } else if (currentOperation === 'restore-all') {
-    //             // Restore all items
-    //             trashItems.forEach(item => {
-    //                 const { deletedAt, ...medicineData } = item;
-    //                 medicines.push(medicineData);
-    //             });
-
-    //             // Clear trash
-    //             trashItems = [];
-
-    //             // Save changes
-    //             saveMedicines();
-    //             saveTrashItems();
-
-    //             // Update UI
-    //             renderInventory();
-    //             renderTrash();
-    //             updateInventorySummary();
-    //             updateTrashCounter();
-
-    //             showToast('All items restored successfully');
-    //         }
-
-    //         closeModal(confirmModal);
-    //         currentDeleteId = null;
-    //         // Reset to default operation
-    //         currentOperation = 'delete';
-    //     }
-    // });
     confirmDeleteBtn.addEventListener('click', () => {
         if (currentDeleteId !== null || currentOperation === 'empty-trash' || currentOperation === 'restore-all') {
             if (currentOperation === 'permanent-delete') {
@@ -243,8 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Functions
 
+    // Functions
     /**
      * Adds a new medicine to the inventory
      */
@@ -341,53 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Renders the trash table
      */
-    // function renderTrash() {
-    //     // Clear current table contents
-    //     trashBody.innerHTML = '';
-
-    //     // Show empty state if no trash items
-    //     if (trashItems.length === 0) {
-    //         emptyTrashState.style.display = 'flex';
-    //     } else {
-    //         emptyTrashState.style.display = 'none';
-
-    //         // Add trash items to table
-    //         trashItems.forEach(item => {
-    //             const tr = document.createElement('tr');
-
-    //             const dateObj = new Date(item.dateTime);
-    //             const deletedDate = new Date(item.deletedAt);
-    //             const formattedDeletedDate = `${deletedDate.toLocaleDateString()} ${deletedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
-    //             // Calculate days in trash
-    //             const currentDate = new Date();
-    //             const daysInTrash = Math.floor((currentDate - deletedDate) / (1000 * 60 * 60 * 24));
-
-    //             // Calculate total price
-    //             const totalPrice = item.price * item.quantity;
-
-    //             tr.innerHTML = `
-    //                 <td data-label="Medicine Name">${item.name}</td>
-    //                 <td data-label="Price (PKR)">${item.price.toFixed(2)}</td>
-    //                 <td data-label="Quantity">${item.quantity}</td>
-    //                 <td data-label="Total Price (PKR)">${totalPrice.toFixed(2)}</td>
-    //                 <td data-label="Deleted On">${formattedDeletedDate}</td>
-    //                 <td data-label="Days in Trash">${daysInTrash}</td>
-    //                 <td data-label="Actions">
-    //                     <div class="action-icons">
-    //                         <button class="restore-btn" data-id="${item.id}" title="Restore to Inventory"><i class="fas fa-undo-alt"></i></button>
-    //                         <button class="permanent-delete-btn" data-id="${item.id}" title="Delete Permanently"><i class="fas fa-trash-alt"></i></button>
-    //                     </div>
-    //                 </td>
-    //             `;
-
-    //             trashBody.appendChild(tr);
-    //         });
-
-    //         // Add event listeners to restore and permanent delete buttons
-    //         addTrashButtonListeners();
-    //     }
-    // }
     function renderTrash() {
         // Clear current table contents
         trashBody.innerHTML = '';
@@ -417,7 +321,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${item.quantity}</td>
                     <td>PKR ${(item.price * item.quantity).toFixed(2)}</td>
                     <td>${deletedDate.toLocaleDateString()}</td>
-                    <td>${daysInTrash} days</td>
                     <td>${autoDeleteText}</td>
                     <td>
                         <button class="restore-btn" data-id="${item.id}" title="Restore">
@@ -504,23 +407,6 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Adds event listeners to buttons in the trash table
      */
-    // function addTrashButtonListeners() {
-    //     // Restore buttons
-    //     document.querySelectorAll('.restore-btn').forEach(btn => {
-    //         btn.addEventListener('click', () => {
-    //             const id = btn.getAttribute('data-id');
-    //             openRestoreConfirmModal(id);
-    //         });
-    //     });
-
-    //     // Permanent delete buttons
-    //     document.querySelectorAll('.permanent-delete-btn').forEach(btn => {
-    //         btn.addEventListener('click', () => {
-    //             const id = btn.getAttribute('data-id');
-    //             openPermanentDeleteConfirmModal(id);
-    //         });
-    //     });
-    // }
     function addTrashButtonListeners() {
         // Restore buttons
         document.querySelectorAll('.restore-btn').forEach(btn => {
@@ -587,17 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Opens confirmation modal for restoring medicine
      */
-    // function openRestoreConfirmModal(id) {
-    //     const item = trashItems.find(item => item.id === id);
-    //     if (!item) return;
-
-    //     document.getElementById('confirm-message').textContent = 
-    //         `Are you sure you want to restore "${item.name}" to inventory?`;
-
-    //     currentDeleteId = id;
-    //     currentOperation = 'restore';
-    //     openModal(confirmModal);
-    // }
     function openRestoreConfirmModal(id) {
         const item = trashItems.find(item => item.id === id);
         if (!item) return;
@@ -938,102 +813,6 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Exports inventory data to PDF file
      */
-    // function exportToPDF() {
-    //     if (medicines.length === 0) {
-    //         showToast('No data to export', 'error');
-    //         return;
-    //     }
-
-    //     // Create a hidden div to hold the table for PDF generation
-    //     const printDiv = document.createElement('div');
-    //     printDiv.style.display = 'none';
-
-    //     // Create the HTML table structure for PDF
-    //     let tableHTML = `
-    //         <html>
-    //         <head>
-    //             <title>Medical Inventory Report</title>
-    //             <style>
-    //                 body { font-family: Arial, sans-serif; }
-    //                 h2 { color: #4a8cca; text-align: center; margin-bottom: 20px; }
-    //                 table { width: 100%; border-collapse: collapse; }
-    //                 th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
-    //                 th { background-color: #f8f9fa; font-weight: bold; }
-    //                 .summary { margin-top: 20px; text-align: right; font-weight: bold; }
-    //                 .header { text-align: center; margin-bottom: 30px; }
-    //                 .date { text-align: right; margin-bottom: 20px; color: #6c757d; }
-    //             </style>
-    //         </head>
-    //         <body>
-    //             <div class="header">
-    //                 <h2>Medical Store Inventory Report</h2>
-    //             </div>
-    //             <div class="date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
-    //             <table>
-    //                 <thead>
-    //                     <tr>
-    //                         <th>Medicine Name</th>
-    //                         <th>Price (PKR)</th>
-    //                         <th>Quantity</th>
-    //                         <th>Total Price (PKR)</th>
-    //                         <th>Date/Time</th>
-    //                     </tr>
-    //                 </thead>
-    //                 <tbody>
-    //     `;
-
-    //     // Add data rows
-    //     medicines.forEach(medicine => {
-    //         const dateObj = new Date(medicine.dateTime);
-    //         const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    //         const totalPrice = medicine.price * medicine.quantity;
-
-    //         tableHTML += `
-    //             <tr>
-    //                 <td>${medicine.name}</td>
-    //                 <td>${medicine.price.toFixed(2)}</td>
-    //                 <td>${medicine.quantity}</td>
-    //                 <td>${totalPrice.toFixed(2)}</td>
-    //                 <td>${formattedDate}</td>
-    //             </tr>
-    //         `;
-    //     });
-
-    //     // Calculate total inventory value
-    //     const totalInventoryValue = medicines.reduce((sum, medicine) => {
-    //         return sum + (medicine.price * medicine.quantity);
-    //     }, 0);
-
-    //     // Add summary
-    //     tableHTML += `
-    //                 </tbody>
-    //             </table>
-    //             <div class="summary">
-    //                 <p>Total Medicines: ${medicines.length}</p>
-    //                 <p>Total Inventory Value: PKR ${totalInventoryValue.toFixed(2)}</p>
-    //             </div>
-    //         </body>
-    //         </html>
-    //     `;
-
-    //     printDiv.innerHTML = tableHTML;
-    //     document.body.appendChild(printDiv);
-
-    //     // Create a temporary window to print from
-    //     const win = window.open('', '', 'height=700,width=700');
-    //     win.document.write(tableHTML);
-    //     win.document.close();
-
-    //     // Wait for window to load before printing
-    //     win.onload = function () {
-    //         win.focus();
-    //         win.print();
-    //         win.close();
-    //         document.body.removeChild(printDiv);
-    //     };
-
-    //     showToast('Inventory exported to PDF successfully');
-    // }
     function printInventory() {
         if (medicines.length === 0) {
             showToast('No data to print', 'error');
@@ -1131,71 +910,25 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Inventory printed successfully');
     }
 
-
-    // Export inventory data to Pdf file
-    // function downloadPDF() {
-    //     if (medicines.length === 0) {
-    //         showToast('No data to export', 'error');
-    //         return;
-    //     }
-
-    //     const doc = new jsPDF();
-
-    //     // Add title
-    //     doc.setFontSize(18);
-    //     doc.text('Medical Store Inventory Report', 105, 20, { align: 'center' });
-
-    //     // Add date
-    //     doc.setFontSize(12);
-    //     doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 30, { align: 'center' });
-
-    //     // Add table headers
-    //     const headers = ['Medicine Name', 'Price (PKR)', 'Quantity', 'Total Price (PKR)', 'Date/Time'];
-    //     const data = medicines.map(medicine => {
-    //         const dateObj = new Date(medicine.dateTime);
-    //         const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    //         const totalPrice = medicine.price * medicine.quantity;
-    //         return [medicine.name, medicine.price.toFixed(2), medicine.quantity, totalPrice.toFixed(2), formattedDate];
-    //     });
-
-    //     // Add table to PDF
-    //     doc.autoTable({
-    //         head: [headers],
-    //         body: data,
-    //         startY: 40,
-    //         theme: 'grid',
-    //         headStyles: { fillColor: [74, 140, 202] },
-    //     });
-
-    //     // Add summary
-    //     const totalMedicines = medicines.length;
-    //     const totalValue = medicines.reduce((sum, medicine) => sum + (medicine.price * medicine.quantity), 0);
-    //     doc.text(`Total Medicines: ${totalMedicines}`, 14, doc.lastAutoTable.finalY + 10);
-    //     doc.text(`Total Inventory Value: PKR ${totalValue.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 20);
-
-    //     // Save the PDF
-    //     doc.save(`medical-inventory-${new Date().toISOString().split('T')[0]}.pdf`);
-    //     showToast('Inventory exported to PDF successfully');
-    // }
     function downloadPDF() {
         if (medicines.length === 0) {
             showToast('No data to export', 'error');
             return;
         }
-    
+
         // Import jsPDF and autoTable
         const { jsPDF } = window.jspdf;
-    
+
         const doc = new jsPDF();
-    
+
         // Add title
         doc.setFontSize(18);
         doc.text('Medical Store Inventory Report', 105, 20, { align: 'center' });
-    
+
         // Add date
         doc.setFontSize(12);
         doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 30, { align: 'center' });
-    
+
         // Add table headers and data
         const headers = ['Medicine Name', 'Price (PKR)', 'Quantity', 'Total Price (PKR)', 'Date/Time'];
         const data = medicines.map(medicine => {
@@ -1204,7 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const totalPrice = medicine.price * medicine.quantity;
             return [medicine.name, medicine.price.toFixed(2), medicine.quantity, totalPrice.toFixed(2), formattedDate];
         });
-    
+
         // Add table to PDF
         doc.autoTable({
             head: [headers],
@@ -1213,13 +946,13 @@ document.addEventListener('DOMContentLoaded', () => {
             theme: 'grid',
             headStyles: { fillColor: [74, 140, 202] },
         });
-    
+
         // Add summary
         const totalMedicines = medicines.length;
         const totalValue = medicines.reduce((sum, medicine) => sum + (medicine.price * medicine.quantity), 0);
         doc.text(`Total Medicines: ${totalMedicines}`, 14, doc.lastAutoTable.finalY + 10);
         doc.text(`Total Inventory Value: PKR ${totalValue.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 20);
-    
+
         // Save the PDF
         doc.save(`medical-inventory-${new Date().toISOString().split('T')[0]}.pdf`);
         showToast('Inventory exported to PDF successfully');
@@ -1296,8 +1029,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create a Word document structure
         let wordContent = `
             <html xmlns:o='urn:schemas-microsoft-com:office:office' 
-                  xmlns:w='urn:schemas-microsoft-com:office:word'
-                  xmlns='http://www.w3.org/TR/REC-html40'>
+                xmlns:w='urn:schemas-microsoft-com:office:word'
+                xmlns='http://www.w3.org/TR/REC-html40'>
             <head>
                 <meta charset="utf-8">
                 <title>Medical Store Inventory Report</title>
