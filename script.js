@@ -13,6 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalValueEl = document.getElementById('total-value');
     const emptyState = document.getElementById('empty-state');
     
+    // Trash elements
+    const trashBody = document.getElementById('trash-body');
+    const emptyTrashState = document.getElementById('empty-trash-state');
+    const inventoryTab = document.getElementById('inventory-tab');
+    const trashTab = document.getElementById('trash-tab');
+    const inventoryPanel = document.getElementById('inventory-panel');
+    const trashPanel = document.getElementById('trash-panel');
+    const trashCounter = document.getElementById('trash-counter');
+    const autoDeleteSelect = document.getElementById('auto-delete-select');
+    const emptyTrashBtn = document.getElementById('empty-trash-btn');
+    const restoreAllBtn = document.getElementById('restore-all-btn');
+    
     // Modal elements
     const editModal = document.getElementById('edit-modal');
     const closeModalBtn = document.getElementById('close-modal');
@@ -30,9 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Current medicine ID to delete
     let currentDeleteId = null;
+    let currentRestoreId = null;
+    let currentOperation = 'delete'; // 'delete' or 'restore'
     
     // Initialize medicines array from localStorage
     let medicines = JSON.parse(localStorage.getItem('medicines')) || [];
+    let trashItems = JSON.parse(localStorage.getItem('trashItems')) || [];
     
     // Initialize theme from localStorage
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -303,14 +318,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     /**
-     * Deletes a medicine from inventory
+     * Moves a medicine from inventory to trash
      */
     function deleteMedicine(id) {
+        const medicineToDelete = medicines.find(med => med.id === id);
+        if (!medicineToDelete) return;
+        
+        // Add delete timestamp for auto-delete feature
+        const itemForTrash = {
+            ...medicineToDelete,
+            deletedAt: new Date().toISOString()
+        };
+        
+        // Move to trash
+        trashItems.push(itemForTrash);
+        
+        // Remove from inventory
         medicines = medicines.filter(medicine => medicine.id !== id);
+        
+        // Save changes
         saveMedicines();
+        saveTrashItems();
+        
+        // Update UI
         renderInventory();
+        renderTrash();
         updateInventorySummary();
-        showToast('Medicine deleted successfully');
+        updateTrashCounter();
+        
+        showToast('Medicine moved to trash');
     }
     
     /**
@@ -680,4 +716,315 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveMedicines() {
         localStorage.setItem('medicines', JSON.stringify(medicines));
     }
+    
+    /**
+     * Saves trash items to localStorage
+     */
+    function saveTrashItems() {
+        localStorage.setItem('trashItems', JSON.stringify(trashItems));
+    }
+    
+    /**
+     * Renders the trash table
+     */
+    function renderTrash() {
+        // Clear current table contents
+        trashBody.innerHTML = '';
+        
+        // Show empty state if no trash items
+        if (trashItems.length === 0) {
+            emptyTrashState.style.display = 'flex';
+        } else {
+            emptyTrashState.style.display = 'none';
+            
+            // Sort trash items by deletion date (newest first)
+            const sortedTrash = [...trashItems].sort((a, b) => 
+                new Date(b.deletedAt) - new Date(a.deletedAt)
+            );
+            
+            // Add trash items to table
+            sortedTrash.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                const dateObj = new Date(item.dateTime);
+                const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                
+                const deletedDateObj = new Date(item.deletedAt);
+                const formattedDeletedDate = `${deletedDateObj.toLocaleDateString()} ${deletedDateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                
+                // Calculate days in trash
+                const daysInTrash = Math.floor((new Date() - deletedDateObj) / (1000 * 60 * 60 * 24));
+                
+                // Calculate total price for this medicine
+                const totalPrice = item.price * item.quantity;
+                
+                tr.innerHTML = `
+                    <td data-label="Medicine Name">${item.name}</td>
+                    <td data-label="Price (PKR)">${item.price.toFixed(2)}</td>
+                    <td data-label="Quantity">${item.quantity}</td>
+                    <td data-label="Total Price (PKR)">${totalPrice.toFixed(2)}</td>
+                    <td data-label="Deleted On">${formattedDeletedDate}</td>
+                    <td data-label="Days in Trash">${daysInTrash}</td>
+                    <td data-label="Actions">
+                        <div class="action-icons">
+                            <button class="restore-btn" data-id="${item.id}" title="Restore"><i class="fas fa-undo"></i></button>
+                            <button class="permanent-delete-btn" data-id="${item.id}" title="Delete Permanently"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </td>
+                `;
+                
+                trashBody.appendChild(tr);
+            });
+            
+            // Add event listeners to restore and permanent delete buttons
+            addTrashButtonListeners();
+        }
+    }
+    
+    /**
+     * Updates the trash counter
+     */
+    function updateTrashCounter() {
+        if (trashCounter) {
+            trashCounter.textContent = trashItems.length > 0 ? trashItems.length : '';
+            trashCounter.style.display = trashItems.length > 0 ? 'flex' : 'none';
+        }
+    }
+    
+    /**
+     * Adds event listeners to buttons in the trash table
+     */
+    function addTrashButtonListeners() {
+        // Restore buttons
+        document.querySelectorAll('.restore-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                restoreMedicine(id);
+            });
+        });
+        
+        // Permanent delete buttons
+        document.querySelectorAll('.permanent-delete-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                openPermanentDeleteConfirmModal(id);
+            });
+        });
+    }
+    
+    /**
+     * Opens confirmation modal for permanent deletion
+     */
+    function openPermanentDeleteConfirmModal(id) {
+        const item = trashItems.find(item => item.id === id);
+        if (!item) return;
+        
+        document.getElementById('confirm-message').textContent = 
+            `Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.`;
+        
+        currentDeleteId = id;
+        currentOperation = 'permanent-delete';
+        openModal(confirmModal);
+    }
+    
+    /**
+     * Permanently deletes an item from trash
+     */
+    function permanentlyDeleteMedicine(id) {
+        trashItems = trashItems.filter(item => item.id !== id);
+        saveTrashItems();
+        renderTrash();
+        updateTrashCounter();
+        showToast('Medicine permanently deleted');
+    }
+    
+    /**
+     * Restores a medicine from trash to inventory
+     */
+    function restoreMedicine(id) {
+        const itemToRestore = trashItems.find(item => item.id === id);
+        if (!itemToRestore) return;
+        
+        // Remove the deletedAt property before restoring
+        const { deletedAt, ...medicineData } = itemToRestore;
+        
+        // Add back to inventory
+        medicines.push(medicineData);
+        
+        // Remove from trash
+        trashItems = trashItems.filter(item => item.id !== id);
+        
+        // Save changes
+        saveMedicines();
+        saveTrashItems();
+        
+        // Update UI
+        renderInventory();
+        renderTrash();
+        updateInventorySummary();
+        updateTrashCounter();
+        
+        showToast('Medicine restored successfully');
+    }
+    
+    /**
+     * Empties the trash (removes all items permanently)
+     */
+    function emptyTrash() {
+        if (trashItems.length === 0) {
+            showToast('Trash is already empty', 'info');
+            return;
+        }
+        
+        // Clear trash
+        trashItems = [];
+        saveTrashItems();
+        renderTrash();
+        updateTrashCounter();
+        
+        showToast('Trash emptied successfully');
+    }
+    
+    /**
+     * Shows the selected panel (inventory or trash)
+     */
+    function showPanel(panelName) {
+        if (panelName === 'inventory') {
+            inventoryPanel.style.display = 'block';
+            trashPanel.style.display = 'none';
+            inventoryTab.classList.add('active');
+            trashTab.classList.remove('active');
+        } else {
+            inventoryPanel.style.display = 'none';
+            trashPanel.style.display = 'block';
+            inventoryTab.classList.remove('active');
+            trashTab.classList.add('active');
+            renderTrash(); // Refresh trash view when switching to it
+        }
+    }
+    
+    /**
+     * Checks for items to auto-delete based on user preferences
+     */
+    function checkAutoDelete() {
+        const autoDeleteDays = localStorage.getItem('autoDeleteDays') || 'never';
+        
+        if (autoDeleteDays === 'never') return;
+        
+        const daysToKeep = parseInt(autoDeleteDays);
+        const now = new Date();
+        
+        // Filter out items that should be auto-deleted
+        const updatedTrashItems = trashItems.filter(item => {
+            const deletedDate = new Date(item.deletedAt);
+            const daysDifference = Math.floor((now - deletedDate) / (1000 * 60 * 60 * 24));
+            
+            return daysDifference < daysToKeep;
+        });
+        
+        const deletedCount = trashItems.length - updatedTrashItems.length;
+        
+        if (deletedCount > 0) {
+            trashItems = updatedTrashItems;
+            saveTrashItems();
+            renderTrash();
+            updateTrashCounter();
+            showToast(`${deletedCount} item(s) auto-deleted from trash`);
+        }
+    }
+    
+    /**
+     * Returns human-readable text for auto-delete setting
+     */
+    function getAutoDeleteText(value) {
+        switch (value) {
+            case '7': return 'After 7 days';
+            case '30': return 'After 30 days';
+            default: return 'Never';
+        }
+    }
+    
+    // Initialize trash UI and auto-delete
+    renderTrash();
+    updateTrashCounter();
+    
+    // Set up event listeners for trash functionality
+    if (trashTab) {
+        trashTab.addEventListener('click', () => showPanel('trash'));
+    }
+    
+    if (inventoryTab) {
+        inventoryTab.addEventListener('click', () => showPanel('inventory'));
+    }
+    
+    if (emptyTrashBtn) {
+        emptyTrashBtn.addEventListener('click', () => {
+            if (trashItems.length > 0) {
+                if (confirm(`Are you sure you want to permanently delete all ${trashItems.length} items in trash?`)) {
+                    emptyTrash();
+                }
+            } else {
+                showToast('Trash is already empty', 'info');
+            }
+        });
+    }
+    
+    if (restoreAllBtn) {
+        restoreAllBtn.addEventListener('click', () => {
+            if (trashItems.length > 0) {
+                if (confirm(`Are you sure you want to restore all ${trashItems.length} items from trash?`)) {
+                    // Restore all items
+                    trashItems.forEach(item => {
+                        const { deletedAt, ...medicineData } = item;
+                        medicines.push(medicineData);
+                    });
+                    
+                    // Clear trash
+                    trashItems = [];
+                    
+                    // Save changes
+                    saveMedicines();
+                    saveTrashItems();
+                    
+                    // Update UI
+                    renderInventory();
+                    renderTrash();
+                    updateInventorySummary();
+                    updateTrashCounter();
+                    
+                    showToast('All items restored successfully');
+                }
+            } else {
+                showToast('No items to restore', 'info');
+            }
+        });
+    }
+    
+    // Update confirm delete button to handle both operations
+    confirmDeleteBtn.addEventListener('click', () => {
+        if (currentDeleteId !== null) {
+            if (currentOperation === 'permanent-delete') {
+                permanentlyDeleteMedicine(currentDeleteId);
+            } else {
+                deleteMedicine(currentDeleteId);
+            }
+            closeModal(confirmModal);
+            currentDeleteId = null;
+        }
+    });
+    
+    // Set up auto-delete select
+    if (autoDeleteSelect) {
+        const savedAutoDelete = localStorage.getItem('autoDeleteDays') || 'never';
+        autoDeleteSelect.value = savedAutoDelete;
+        
+        autoDeleteSelect.addEventListener('change', function() {
+            localStorage.setItem('autoDeleteDays', this.value);
+            checkAutoDelete();
+            showToast(`Auto-delete set to: ${getAutoDeleteText(this.value)}`);
+        });
+    }
+    
+    // Initial check for auto-delete
+    checkAutoDelete();
 });
