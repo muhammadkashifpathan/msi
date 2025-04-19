@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const trashBody = document.getElementById('trash-body');
     const emptyTrashState = document.getElementById('empty-trash-state');
     const inventoryTab = document.getElementById('inventory-tab');
+    const trashTabMain = document.getElementById('trash-tab-main');
     const trashTab = document.getElementById('trash-tab');
     const inventoryPanel = document.getElementById('inventory-panel');
     const trashPanel = document.getElementById('trash-panel');
@@ -818,73 +819,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     /**
-     * Renders the trash table
-     */
-    function renderTrash() {
-        // Clear current table contents
-        trashBody.innerHTML = '';
-        
-        // Show empty state if no trash items
-        if (trashItems.length === 0) {
-            emptyTrashState.style.display = 'flex';
-        } else {
-            emptyTrashState.style.display = 'none';
-            
-            // Sort trash items by deletion date (newest first)
-            const sortedTrash = [...trashItems].sort((a, b) => 
-                new Date(b.deletedAt) - new Date(a.deletedAt)
-            );
-            
-            // Add trash items to table
-            sortedTrash.forEach(item => {
-                const tr = document.createElement('tr');
-                
-                const dateObj = new Date(item.dateTime);
-                const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-                
-                const deletedDateObj = new Date(item.deletedAt);
-                const formattedDeletedDate = `${deletedDateObj.toLocaleDateString()} ${deletedDateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-                
-                // Calculate days in trash
-                const daysInTrash = Math.floor((new Date() - deletedDateObj) / (1000 * 60 * 60 * 24));
-                
-                // Calculate total price for this medicine
-                const totalPrice = item.price * item.quantity;
-                
-                tr.innerHTML = `
-                    <td data-label="Medicine Name">${item.name}</td>
-                    <td data-label="Price (PKR)">${item.price.toFixed(2)}</td>
-                    <td data-label="Quantity">${item.quantity}</td>
-                    <td data-label="Total Price (PKR)">${totalPrice.toFixed(2)}</td>
-                    <td data-label="Deleted On">${formattedDeletedDate}</td>
-                    <td data-label="Days in Trash">${daysInTrash}</td>
-                    <td data-label="Actions">
-                        <div class="action-icons">
-                            <button class="restore-btn" data-id="${item.id}" title="Restore"><i class="fas fa-undo"></i></button>
-                            <button class="permanent-delete-btn" data-id="${item.id}" title="Delete Permanently"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    </td>
-                `;
-                
-                trashBody.appendChild(tr);
-            });
-            
-            // Add event listeners to restore and permanent delete buttons
-            addTrashButtonListeners();
-        }
-    }
-    
-    /**
-     * Updates the trash counter
-     */
-    function updateTrashCounter() {
-        if (trashCounter) {
-            trashCounter.textContent = trashItems.length > 0 ? trashItems.length : '';
-            trashCounter.style.display = trashItems.length > 0 ? 'flex' : 'none';
-        }
-    }
-    
-    /**
      * Adds event listeners to buttons in the trash table
      */
     function addTrashButtonListeners() {
@@ -915,8 +849,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confirm-message').textContent = 
             `Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.`;
         
-        currentDeleteId = id;
         currentOperation = 'permanent-delete';
+        currentDeleteId = id;
         openModal(confirmModal);
     }
     
@@ -928,7 +862,11 @@ document.addEventListener('DOMContentLoaded', () => {
         saveTrashItems();
         renderTrash();
         updateTrashCounter();
+        
         showToast('Medicine permanently deleted');
+        
+        // Reset operation
+        currentOperation = 'delete';
     }
     
     /**
@@ -938,11 +876,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const itemToRestore = trashItems.find(item => item.id === id);
         if (!itemToRestore) return;
         
-        // Remove the deletedAt property before restoring
-        const { deletedAt, ...medicineData } = itemToRestore;
+        // Create restored medicine (remove deletedAt property)
+        const { deletedAt, ...restoredMedicine } = itemToRestore;
         
-        // Add back to inventory
-        medicines.push(medicineData);
+        // Move to inventory
+        medicines.push(restoredMedicine);
         
         // Remove from trash
         trashItems = trashItems.filter(item => item.id !== id);
@@ -957,8 +895,102 @@ document.addEventListener('DOMContentLoaded', () => {
         updateInventorySummary();
         updateTrashCounter();
         
-        showToast('Medicine restored successfully');
+        showToast('Medicine restored to inventory');
     }
+    
+    /**
+     * Empties the trash (removes all items permanently)
+     */
+    function emptyTrash() {
+        if (trashItems.length === 0) {
+            showToast('Trash is already empty', 'error');
+            return;
+        }
+        
+        trashItems = [];
+        saveTrashItems();
+        renderTrash();
+        updateTrashCounter();
+        
+        showToast('Trash emptied successfully');
+    }
+    
+    /**
+     * Shows the selected panel (inventory or trash)
+     */
+    function showPanel(panelName) {
+        // Get all panels
+        const panels = document.querySelectorAll('.inventory-section, .trash-section');
+        
+        // Get all tab buttons
+        const tabButtons = document.querySelectorAll('.tab-button');
+        
+        // Hide all panels and remove active class from tabs
+        panels.forEach(panel => panel.style.display = 'none');
+        tabButtons.forEach(tab => tab.classList.remove('active'));
+        
+        // Show selected panel and add active class to corresponding tab
+        if (panelName === 'inventory') {
+            document.getElementById('inventory-panel').style.display = 'block';
+            document.getElementById('inventory-tab').classList.add('active');
+        } else if (panelName === 'trash') {
+            document.getElementById('trash-panel').style.display = 'block';
+            document.getElementById('trash-tab-main').classList.add('active');
+            if (document.getElementById('trash-tab')) {
+                document.getElementById('trash-tab').classList.add('active');
+            }
+        }
+    }
+    
+    /**
+     * Checks for items to auto-delete based on user preferences
+     */
+    function checkAutoDelete() {
+        const autoDeleteSetting = localStorage.getItem('autoDeleteDays');
+        
+        if (!autoDeleteSetting || autoDeleteSetting === 'never') {
+            return;
+        }
+        
+        const daysToKeep = parseInt(autoDeleteSetting);
+        const currentDate = new Date();
+        
+        // Filter out items that are older than the auto-delete setting
+        const itemsToKeep = trashItems.filter(item => {
+            const deletedDate = new Date(item.deletedAt);
+            const daysDifference = Math.floor((currentDate - deletedDate) / (1000 * 60 * 60 * 24));
+            return daysDifference < daysToKeep;
+        });
+        
+        // If items were removed, update trash
+        if (itemsToKeep.length < trashItems.length) {
+            trashItems = itemsToKeep;
+            saveTrashItems();
+            renderTrash();
+            updateTrashCounter();
+            
+            const itemsDeleted = trashItems.length - itemsToKeep.length;
+            showToast(`${itemsDeleted} item(s) auto-deleted from trash`);
+        }
+    }
+    
+    /**
+     * Returns human-readable text for auto-delete setting
+     */
+    function getAutoDeleteText(value) {
+        switch (value) {
+            case 'never':
+                return 'Never auto-delete';
+            case '7':
+                return 'Auto-delete after 7 days';
+            case '30':
+                return 'Auto-delete after 30 days';
+            default:
+                return 'Auto-delete setting';
+        }
+    }
+    
+
     
     /**
      * Empties the trash (removes all items permanently)
@@ -982,17 +1014,29 @@ document.addEventListener('DOMContentLoaded', () => {
      * Shows the selected panel (inventory or trash)
      */
     function showPanel(panelName) {
+        // Get all panels
+        const panels = document.querySelectorAll('.inventory-section, .trash-section');
+        
+        // Get all tab buttons
+        const tabButtons = document.querySelectorAll('.tab-button');
+        
+        // Hide all panels and remove active class from tabs
+        panels.forEach(panel => panel.style.display = 'none');
+        tabButtons.forEach(tab => tab.classList.remove('active'));
+        
+        // Show selected panel and add active class to corresponding tab
         if (panelName === 'inventory') {
-            inventoryPanel.style.display = 'block';
-            trashPanel.style.display = 'none';
-            inventoryTab.classList.add('active');
-            trashTab.classList.remove('active');
-        } else {
-            inventoryPanel.style.display = 'none';
-            trashPanel.style.display = 'block';
-            inventoryTab.classList.remove('active');
-            trashTab.classList.add('active');
-            renderTrash(); // Refresh trash view when switching to it
+            document.getElementById('inventory-panel').style.display = 'block';
+            document.getElementById('inventory-tab').classList.add('active');
+        } else if (panelName === 'trash') {
+            document.getElementById('trash-panel').style.display = 'block';
+            document.getElementById('trash-tab-main').classList.add('active');
+            if (document.getElementById('trash-tab')) {
+                document.getElementById('trash-tab').classList.add('active');
+            }
+            
+            // Refresh trash view when switching to it
+            renderTrash();
         }
     }
     
@@ -1037,19 +1081,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Initialize trash UI and auto-delete
-    renderTrash();
-    updateTrashCounter();
-    
-    // Set up event listeners for trash functionality
-    if (trashTab) {
-        trashTab.addEventListener('click', () => showPanel('trash'));
-    }
-    
-    if (inventoryTab) {
-        inventoryTab.addEventListener('click', () => showPanel('inventory'));
-    }
-    
     if (emptyTrashBtn) {
         emptyTrashBtn.addEventListener('click', () => {
             if (trashItems.length > 0) {
@@ -1057,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     emptyTrash();
                 }
             } else {
-                showToast('Trash is already empty', 'info');
+                showToast('Trash is already empty', 'error');
             }
         });
     }
@@ -1088,7 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('All items restored successfully');
                 }
             } else {
-                showToast('No items to restore', 'info');
+                showToast('No items to restore', 'error');
             }
         });
     }
