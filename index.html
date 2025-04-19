@@ -37,7 +37,10 @@
                 <form id="add-medicine-form">
                     <div class="form-group">
                         <label for="medicine-name">Medicine Name</label>
-                        <input type="text" id="medicine-name" required placeholder="Enter medicine name">
+                        <input type="text" id="medicine-name" list="medicine-suggestions" required placeholder="Enter medicine name">
+    <datalist id="medicine-suggestions">
+        <!-- Suggestions will be dynamically populated -->
+    </datalist>
                     </div>
                     <div class="form-group">
                         <label for="medicine-price">Price (PKR)</label>

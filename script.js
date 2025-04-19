@@ -55,6 +55,29 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeToggleIcon(savedTheme);
 
+    // Predefined list of medicines
+    const medicineList = [
+        "Paracetamol",
+        "Ibuprofen",
+        "Amoxicillin",
+        "Ciprofloxacin",
+        "Metformin",
+        "Aspirin",
+        "Omeprazole",
+        "Losartan",
+        "Atorvastatin",
+        "Azithromycin"
+    ];
+
+    // Populate the datalist with medicine suggestions
+    const datalist = document.getElementById('medicine-suggestions');
+    medicineList.forEach(medicine => {
+        const option = document.createElement('option');
+        option.value = medicine;
+        datalist.appendChild(option);
+    });
+    
+
     // Render initial inventory and trash
     renderInventory();
     renderTrash();
