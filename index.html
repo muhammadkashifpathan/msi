@@ -16,9 +16,17 @@
                     <i class="fas fa-pills app-icon"></i>
                     <h1>Medical Store Inventory</h1>
                 </div>
-                <button id="theme-toggle" aria-label="Toggle dark/light mode">
-                    <i class="fas fa-moon"></i>
-                </button>
+                <div class="app-controls">
+                    <button id="theme-toggle" aria-label="Toggle dark/light mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <div class="tab-trash-container">
+                        <button id="trash-tab" class="tab-button" aria-label="View trash">
+                            <i class="fas fa-trash"></i>
+                            <span id="trash-counter" class="trash-counter">0</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <section class="add-medicine-section">
@@ -42,7 +50,14 @@
         </header>
 
         <main>
-            <section class="inventory-section">
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button id="inventory-tab" class="tab-button active">Inventory</button>
+                    <button id="trash-tab-main" class="tab-button">Trash</button>
+                </div>
+            </div>
+            
+            <section id="inventory-panel" class="inventory-section">
                 <div class="inventory-header">
                     <h2>Inventory</h2>
                     <div class="inventory-actions">
@@ -108,6 +123,54 @@
                     <div id="empty-state" class="empty-state">
                         <i class="fas fa-prescription-bottle-alt empty-icon"></i>
                         <p>No medicines in inventory yet.<br>Add your first medicine to get started.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Trash Section -->
+            <section id="trash-panel" class="trash-section" style="display: none;">
+                <div class="trash-header">
+                    <h2>Trash</h2>
+                    <div class="trash-actions">
+                        <div class="auto-delete-container">
+                            <label for="auto-delete-select">Auto-delete after:</label>
+                            <select id="auto-delete-select">
+                                <option value="never">Never</option>
+                                <option value="7">7 days</option>
+                                <option value="30">30 days</option>
+                            </select>
+                        </div>
+                        <div class="trash-buttons">
+                            <button id="restore-all-btn" class="action-btn" title="Restore All Items">
+                                <i class="fas fa-undo-alt"></i> Restore All
+                            </button>
+                            <button id="empty-trash-btn" class="action-btn delete-btn" title="Empty Trash">
+                                <i class="fas fa-trash-alt"></i> Empty Trash
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="trash-table">
+                        <thead>
+                            <tr>
+                                <th>Medicine Name</th>
+                                <th>Price (PKR)</th>
+                                <th>Quantity</th>
+                                <th>Total Price (PKR)</th>
+                                <th>Deleted On</th>
+                                <th>Days in Trash</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trash-body">
+                            <!-- Trash items will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div id="empty-trash-state" class="empty-state">
+                        <i class="fas fa-trash-alt empty-icon"></i>
+                        <p>Trash is empty.<br>Deleted medicines will appear here.</p>
                     </div>
                 </div>
             </section>

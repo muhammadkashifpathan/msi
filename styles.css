@@ -73,9 +73,35 @@ header {
     gap: 12px;
 }
 
+.app-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
 .app-icon {
     font-size: 2rem;
     color: var(--primary-color);
+}
+
+.trash-counter {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--danger-color);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.tab-trash-container {
+    position: relative;
 }
 
 h1, h2, h3 {
@@ -509,6 +535,94 @@ tr:hover td {
 
 .toast.error {
     background-color: var(--danger-color);
+}
+
+/* Tabs */
+.tabs-container {
+    margin-bottom: 20px;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    gap: 5px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background-color: var(--background-color);
+    border: none;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--secondary-color);
+}
+
+.tab-button.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Trash Section */
+.trash-section {
+    background-color: var(--container-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    overflow: hidden;
+}
+
+.trash-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.trash-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.auto-delete-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.trash-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.restore-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.restore-btn:hover {
+    background-color: #3a7ab7;
+}
+
+.permanent-delete-btn {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.permanent-delete-btn:hover {
+    background-color: #c82333;
 }
 
 /* Responsive Styles */
