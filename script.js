@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Variables for deletion and restoration
     let currentDeleteId = null;
     let currentRestoreId = null;
-    let currentOperation = 'delete'; // 'delete', 'permanent-delete', or 'restore'
+    let currentOperation = 'delete'; // 'delete', 'permanent-delete', 'restore-all', or 'empty-trash'
     
     // Initialize medicines array from localStorage
     let medicines = JSON.parse(localStorage.getItem('medicines')) || [];
@@ -67,16 +67,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event Listeners
     
     // Tab switching
-    document.getElementById('inventory-tab').addEventListener('click', () => {
+    inventoryTab.addEventListener('click', () => {
         showPanel('inventory');
     });
     
-    document.getElementById('trash-tab-main').addEventListener('click', () => {
+    trashTabMain.addEventListener('click', () => {
         showPanel('trash');
     });
     
-    if (document.getElementById('trash-tab')) {
-        document.getElementById('trash-tab').addEventListener('click', () => {
+    if (trashTab) {
+        trashTab.addEventListener('click', () => {
             showPanel('trash');
         });
     }
@@ -117,16 +117,83 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelEditBtn.addEventListener('click', () => closeModal(editModal));
     cancelDeleteBtn.addEventListener('click', () => closeModal(confirmModal));
     
+    // Add event listeners for trash functionality
+    if (emptyTrashBtn) {
+        emptyTrashBtn.addEventListener('click', () => {
+            if (trashItems.length > 0) {
+                document.getElementById('confirm-message').textContent = 
+                    `Are you sure you want to permanently delete all ${trashItems.length} items in trash?`;
+                
+                currentOperation = 'empty-trash';
+                openModal(confirmModal);
+            } else {
+                showToast('Trash is already empty', 'error');
+            }
+        });
+    }
+    
+    if (restoreAllBtn) {
+        restoreAllBtn.addEventListener('click', () => {
+            if (trashItems.length > 0) {
+                document.getElementById('confirm-message').textContent = 
+                    `Are you sure you want to restore all ${trashItems.length} items from trash?`;
+                
+                currentOperation = 'restore-all';
+                openModal(confirmModal);
+            } else {
+                showToast('No items to restore', 'error');
+            }
+        });
+    }
+    
+    // Set up auto-delete select
+    if (autoDeleteSelect) {
+        const savedAutoDelete = localStorage.getItem('autoDeleteDays') || 'never';
+        autoDeleteSelect.value = savedAutoDelete;
+        
+        autoDeleteSelect.addEventListener('change', function() {
+            localStorage.setItem('autoDeleteDays', this.value);
+            checkAutoDelete();
+            showToast(`Auto-delete set to: ${getAutoDeleteText(this.value)}`);
+        });
+    }
+    
     // Confirm delete/permanently delete button
     confirmDeleteBtn.addEventListener('click', () => {
-        if (currentDeleteId !== null) {
+        if (currentDeleteId !== null || currentOperation === 'empty-trash' || currentOperation === 'restore-all') {
             if (currentOperation === 'permanent-delete') {
                 permanentlyDeleteMedicine(currentDeleteId);
-            } else {
+            } else if (currentOperation === 'delete') {
                 deleteMedicine(currentDeleteId);
+            } else if (currentOperation === 'empty-trash') {
+                emptyTrash();
+            } else if (currentOperation === 'restore-all') {
+                // Restore all items
+                trashItems.forEach(item => {
+                    const { deletedAt, ...medicineData } = item;
+                    medicines.push(medicineData);
+                });
+                
+                // Clear trash
+                trashItems = [];
+                
+                // Save changes
+                saveMedicines();
+                saveTrashItems();
+                
+                // Update UI
+                renderInventory();
+                renderTrash();
+                updateInventorySummary();
+                updateTrashCounter();
+                
+                showToast('All items restored successfully');
             }
+            
             closeModal(confirmModal);
             currentDeleteId = null;
+            // Reset to default operation
+            currentOperation = 'delete';
         }
     });
     
@@ -226,6 +293,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     /**
+     * Renders the trash table
+     */
+    function renderTrash() {
+        // Clear current table contents
+        trashBody.innerHTML = '';
+        
+        // Show empty state if no trash items
+        if (trashItems.length === 0) {
+            emptyTrashState.style.display = 'flex';
+        } else {
+            emptyTrashState.style.display = 'none';
+            
+            // Add trash items to table
+            trashItems.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                const dateObj = new Date(item.dateTime);
+                const deletedDate = new Date(item.deletedAt);
+                const formattedDeletedDate = `${deletedDate.toLocaleDateString()} ${deletedDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                
+                // Calculate days in trash
+                const currentDate = new Date();
+                const daysInTrash = Math.floor((currentDate - deletedDate) / (1000 * 60 * 60 * 24));
+                
+                // Calculate total price
+                const totalPrice = item.price * item.quantity;
+                
+                tr.innerHTML = `
+                    <td data-label="Medicine Name">${item.name}</td>
+                    <td data-label="Price (PKR)">${item.price.toFixed(2)}</td>
+                    <td data-label="Quantity">${item.quantity}</td>
+                    <td data-label="Total Price (PKR)">${totalPrice.toFixed(2)}</td>
+                    <td data-label="Deleted On">${formattedDeletedDate}</td>
+                    <td data-label="Days in Trash">${daysInTrash}</td>
+                    <td data-label="Actions">
+                        <div class="action-icons">
+                            <button class="restore-btn" data-id="${item.id}" title="Restore to Inventory"><i class="fas fa-undo-alt"></i></button>
+                            <button class="permanent-delete-btn" data-id="${item.id}" title="Delete Permanently"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </td>
+                `;
+                
+                trashBody.appendChild(tr);
+            });
+            
+            // Add event listeners to restore and permanent delete buttons
+            addTrashButtonListeners();
+        }
+    }
+    
+    /**
      * Sorts medicines based on the selected option
      */
     function sortMedicines(medList, sortOption) {
@@ -261,6 +379,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     /**
+     * Updates the trash counter
+     */
+    function updateTrashCounter() {
+        trashCounter.textContent = trashItems.length > 0 ? trashItems.length : '';
+        trashCounter.style.display = trashItems.length > 0 ? 'flex' : 'none';
+    }
+    
+    /**
      * Adds event listeners to edit and delete buttons in the table
      */
     function addTableButtonListeners() {
@@ -282,6 +408,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     /**
+     * Adds event listeners to buttons in the trash table
+     */
+    function addTrashButtonListeners() {
+        // Restore buttons
+        document.querySelectorAll('.restore-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                openRestoreConfirmModal(id);
+            });
+        });
+        
+        // Permanent delete buttons
+        document.querySelectorAll('.permanent-delete-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                openPermanentDeleteConfirmModal(id);
+            });
+        });
+    }
+    
+    /**
      * Opens the edit modal and populates it with medicine data
      */
     function openEditModal(id) {
@@ -295,75 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         openModal(editModal);
     }
-
-    /**
-     * Renders the trash table
-     */
-    function renderTrash() {
-        const trashBody = document.getElementById('trash-body');
-        const emptyTrashState = document.getElementById('empty-trash-state');
-        
-        // Clear current table contents
-        trashBody.innerHTML = '';
-        
-        // Show empty state if no items in trash
-        if (trashItems.length === 0) {
-            emptyTrashState.style.display = 'flex';
-        } else {
-            emptyTrashState.style.display = 'none';
-            
-            // Add trash items to table
-            trashItems.forEach(item => {
-                const tr = document.createElement('tr');
-                
-                const addedDate = new Date(item.dateTime);
-                const deletedDate = new Date(item.deletedAt);
-                const formattedDeletedDate = `${deletedDate.toLocaleDateString()} ${deletedDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-                
-                // Calculate days in trash
-                const currentDate = new Date();
-                const daysInTrash = Math.floor((currentDate - deletedDate) / (1000 * 60 * 60 * 24));
-                
-                // Calculate total price
-                const totalPrice = item.price * item.quantity;
-                
-                tr.innerHTML = `
-                    <td data-label="Medicine Name">${item.name}</td>
-                    <td data-label="Price (PKR)">${item.price.toFixed(2)}</td>
-                    <td data-label="Quantity">${item.quantity}</td>
-                    <td data-label="Total Price (PKR)">${totalPrice.toFixed(2)}</td>
-                    <td data-label="Deleted On">${formattedDeletedDate}</td>
-                    <td data-label="Days in Trash">${daysInTrash}</td>
-                    <td data-label="Actions">
-                        <div class="action-icons">
-                            <button class="restore-btn" data-id="${item.id}" title="Restore to Inventory"><i class="fas fa-undo-alt"></i></button>
-                            <button class="permanent-delete-btn" data-id="${item.id}" title="Delete Permanently"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    </td>
-                `;
-                
-                trashBody.appendChild(tr);
-            });
-            
-            // Add event listeners to restore and permanent delete buttons
-            addTrashButtonListeners();
-        }
-    }
-
-    /**
-     * Updates the trash counter
-     */
-    function updateTrashCounter() {
-        const trashCounter = document.getElementById('trash-counter');
-        trashCounter.textContent = trashItems.length;
-        
-        // Hide counter if trash is empty
-        if (trashItems.length === 0) {
-            trashCounter.style.display = 'none';
-        } else {
-            trashCounter.style.display = 'flex';
-        }
-    }
     
     /**
      * Opens the delete confirmation modal
@@ -376,6 +454,37 @@ document.addEventListener('DOMContentLoaded', () => {
             `Are you sure you want to delete "${medicine.name}" from inventory?`;
         
         currentDeleteId = id;
+        currentOperation = 'delete';
+        openModal(confirmModal);
+    }
+    
+    /**
+     * Opens confirmation modal for permanent deletion
+     */
+    function openPermanentDeleteConfirmModal(id) {
+        const item = trashItems.find(item => item.id === id);
+        if (!item) return;
+        
+        document.getElementById('confirm-message').textContent = 
+            `Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.`;
+        
+        currentDeleteId = id;
+        currentOperation = 'permanent-delete';
+        openModal(confirmModal);
+    }
+    
+    /**
+     * Opens confirmation modal for restoring medicine
+     */
+    function openRestoreConfirmModal(id) {
+        const item = trashItems.find(item => item.id === id);
+        if (!item) return;
+        
+        document.getElementById('confirm-message').textContent = 
+            `Are you sure you want to restore "${item.name}" to inventory?`;
+        
+        currentDeleteId = id;
+        currentOperation = 'restore';
         openModal(confirmModal);
     }
     
@@ -441,6 +550,219 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTrashCounter();
         
         showToast('Medicine moved to trash');
+    }
+    
+    /**
+     * Permanently deletes an item from trash
+     */
+    function permanentlyDeleteMedicine(id) {
+        // Remove from trash
+        trashItems = trashItems.filter(item => item.id !== id);
+        
+        // Save changes
+        saveTrashItems();
+        
+        // Update UI
+        renderTrash();
+        updateTrashCounter();
+        
+        showToast('Medicine permanently deleted');
+    }
+    
+    /**
+     * Restores a medicine from trash to inventory
+     */
+    function restoreMedicine(id) {
+        const itemToRestore = trashItems.find(item => item.id === id);
+        if (!itemToRestore) return;
+        
+        // Remove the deletedAt property before restoring
+        const { deletedAt, ...medicineData } = itemToRestore;
+        
+        // Add back to inventory
+        medicines.push(medicineData);
+        
+        // Remove from trash
+        trashItems = trashItems.filter(item => item.id !== id);
+        
+        // Save changes
+        saveMedicines();
+        saveTrashItems();
+        
+        // Update UI
+        renderInventory();
+        renderTrash();
+        updateInventorySummary();
+        updateTrashCounter();
+        
+        showToast('Medicine restored successfully');
+    }
+    
+    /**
+     * Empties the trash (removes all items permanently)
+     */
+    function emptyTrash() {
+        if (trashItems.length === 0) {
+            showToast('Trash is already empty', 'error');
+            return;
+        }
+        
+        // Clear trash
+        trashItems = [];
+        saveTrashItems();
+        
+        // Update UI
+        renderTrash();
+        updateTrashCounter();
+        
+        showToast('Trash emptied successfully');
+    }
+    
+    /**
+     * Shows the selected panel (inventory or trash)
+     */
+    function showPanel(panelName) {
+        // Get all panels
+        const panels = document.querySelectorAll('.inventory-section, .trash-section');
+        
+        // Get all tab buttons
+        const tabButtons = document.querySelectorAll('.tab-button');
+        
+        // Hide all panels and remove active class from tabs
+        panels.forEach(panel => panel.style.display = 'none');
+        tabButtons.forEach(tab => tab.classList.remove('active'));
+        
+        // Show selected panel and add active class to corresponding tab
+        if (panelName === 'inventory') {
+            document.getElementById('inventory-panel').style.display = 'block';
+            document.getElementById('inventory-tab').classList.add('active');
+        } else if (panelName === 'trash') {
+            document.getElementById('trash-panel').style.display = 'block';
+            document.getElementById('trash-tab-main').classList.add('active');
+            if (document.getElementById('trash-tab')) {
+                document.getElementById('trash-tab').classList.add('active');
+            }
+        }
+    }
+    
+    /**
+     * Checks for items to auto-delete based on user preferences
+     */
+    function checkAutoDelete() {
+        const autoDeleteSetting = localStorage.getItem('autoDeleteDays');
+        
+        if (!autoDeleteSetting || autoDeleteSetting === 'never') {
+            return;
+        }
+        
+        const daysToKeep = parseInt(autoDeleteSetting);
+        const currentDate = new Date();
+        
+        // Filter out items that are older than the auto-delete setting
+        const itemsToKeep = trashItems.filter(item => {
+            const deletedDate = new Date(item.deletedAt);
+            const daysDifference = Math.floor((currentDate - deletedDate) / (1000 * 60 * 60 * 24));
+            return daysDifference < daysToKeep;
+        });
+        
+        // If items were removed, update trash
+        if (itemsToKeep.length < trashItems.length) {
+            trashItems = itemsToKeep;
+            saveTrashItems();
+            renderTrash();
+            updateTrashCounter();
+            
+            const itemsDeleted = trashItems.length - itemsToKeep.length;
+            showToast(`${itemsDeleted} item(s) auto-deleted from trash`);
+        }
+    }
+    
+    /**
+     * Returns human-readable text for auto-delete setting
+     */
+    function getAutoDeleteText(value) {
+        switch (value) {
+            case 'never':
+                return 'Never auto-delete';
+            case '7':
+                return 'Auto-delete after 7 days';
+            case '30':
+                return 'Auto-delete after 30 days';
+            default:
+                return 'Auto-delete setting';
+        }
+    }
+    
+    /**
+     * Opens a modal
+     */
+    function openModal(modal) {
+        modal.classList.add('show');
+    }
+    
+    /**
+     * Closes a modal
+     */
+    function closeModal(modal) {
+        modal.classList.remove('show');
+    }
+    
+    /**
+     * Saves medicines to localStorage
+     */
+    function saveMedicines() {
+        localStorage.setItem('medicines', JSON.stringify(medicines));
+    }
+    
+    /**
+     * Saves trash items to localStorage
+     */
+    function saveTrashItems() {
+        localStorage.setItem('trashItems', JSON.stringify(trashItems));
+    }
+    
+    /**
+     * Shows a toast notification
+     */
+    function showToast(message, type = 'success') {
+        toastMessage.textContent = message;
+        toast.className = 'toast';
+        
+        if (type === 'error') {
+            toast.classList.add('error');
+        }
+        
+        toast.classList.add('show');
+        
+        // Hide toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+    
+    /**
+     * Toggles between light and dark theme
+     */
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        updateThemeToggleIcon(newTheme);
+    }
+    
+    /**
+     * Updates the theme toggle icon based on current theme
+     */
+    function updateThemeToggleIcon(theme) {
+        const icon = themeToggleBtn.querySelector('i');
+        if (theme === 'dark') {
+            icon.className = 'fas fa-sun';
+        } else {
+            icon.className = 'fas fa-moon';
+        }
     }
     
     /**
@@ -658,30 +980,29 @@ document.addEventListener('DOMContentLoaded', () => {
                   xmlns='http://www.w3.org/TR/REC-html40'>
             <head>
                 <meta charset="utf-8">
-                <title>Medical Inventory Report</title>
+                <title>Medical Store Inventory Report</title>
                 <!--[if gte mso 9]>
                 <xml>
                     <w:WordDocument>
                         <w:View>Print</w:View>
                         <w:Zoom>100</w:Zoom>
+                        <w:DoNotOptimizeForBrowser/>
                     </w:WordDocument>
                 </xml>
                 <![endif]-->
                 <style>
                     body { font-family: Arial, sans-serif; }
                     h1 { color: #4a8cca; text-align: center; }
-                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    table { width: 100%; border-collapse: collapse; }
                     th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
-                    th { background-color: #4a8cca; color: white; }
-                    .info { margin: 20px 0; }
-                    .summary { margin-top: 20px; font-weight: bold; }
+                    th { background-color: #f8f9fa; }
+                    .date { text-align: right; margin-bottom: 20px; color: #6c757d; }
+                    .summary { margin-top: 20px; text-align: right; font-weight: bold; }
                 </style>
             </head>
             <body>
                 <h1>Medical Store Inventory Report</h1>
-                <div class="info">
-                    <p>Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
-                </div>
+                <div class="date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
                 <table>
                     <thead>
                         <tr>
@@ -743,410 +1064,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(link);
         
         showToast('Inventory exported to Word successfully');
-    }
-    
-    /**
-     * Toggles between light and dark theme
-     */
-    function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        
-        updateThemeToggleIcon(newTheme);
-        showToast(`${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} theme applied`);
-    }
-    
-    /**
-     * Updates the theme toggle icon based on current theme
-     */
-    function updateThemeToggleIcon(theme) {
-        const iconElement = themeToggleBtn.querySelector('i');
-        if (theme === 'dark') {
-            iconElement.className = 'fas fa-sun';
-        } else {
-            iconElement.className = 'fas fa-moon';
-        }
-    }
-    
-    /**
-     * Opens a modal
-     */
-    function openModal(modal) {
-        modal.classList.add('show');
-    }
-    
-    /**
-     * Closes a modal
-     */
-    function closeModal(modal) {
-        modal.classList.remove('show');
-    }
-    
-    /**
-     * Shows a toast notification
-     */
-    function showToast(message, type = 'success') {
-        toastMessage.textContent = message;
-        toast.className = 'toast';
-        
-        if (type === 'error') {
-            toast.classList.add('error');
-        }
-        
-        toast.classList.add('show');
-        
-        // Hide toast after 3 seconds
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
-    }
-    
-    /**
-     * Saves medicines to localStorage
-     */
-    function saveMedicines() {
-        localStorage.setItem('medicines', JSON.stringify(medicines));
-    }
-    
-    /**
-     * Saves trash items to localStorage
-     */
-    function saveTrashItems() {
-        localStorage.setItem('trashItems', JSON.stringify(trashItems));
-    }
-    
-    /**
-     * Adds event listeners to buttons in the trash table
-     */
-    function addTrashButtonListeners() {
-        // Restore buttons
-        document.querySelectorAll('.restore-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.getAttribute('data-id');
-                restoreMedicine(id);
-            });
-        });
-        
-        // Permanent delete buttons
-        document.querySelectorAll('.permanent-delete-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.getAttribute('data-id');
-                openPermanentDeleteConfirmModal(id);
-            });
-        });
-    }
-    
-    /**
-     * Opens confirmation modal for permanent deletion
-     */
-    function openPermanentDeleteConfirmModal(id) {
-        const item = trashItems.find(item => item.id === id);
-        if (!item) return;
-        
-        document.getElementById('confirm-message').textContent = 
-            `Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.`;
-        
-        currentOperation = 'permanent-delete';
-        currentDeleteId = id;
-        openModal(confirmModal);
-    }
-    
-    /**
-     * Permanently deletes an item from trash
-     */
-    function permanentlyDeleteMedicine(id) {
-        trashItems = trashItems.filter(item => item.id !== id);
-        saveTrashItems();
-        renderTrash();
-        updateTrashCounter();
-        
-        showToast('Medicine permanently deleted');
-        
-        // Reset operation
-        currentOperation = 'delete';
-    }
-    
-    /**
-     * Restores a medicine from trash to inventory
-     */
-    function restoreMedicine(id) {
-        const itemToRestore = trashItems.find(item => item.id === id);
-        if (!itemToRestore) return;
-        
-        // Create restored medicine (remove deletedAt property)
-        const { deletedAt, ...restoredMedicine } = itemToRestore;
-        
-        // Move to inventory
-        medicines.push(restoredMedicine);
-        
-        // Remove from trash
-        trashItems = trashItems.filter(item => item.id !== id);
-        
-        // Save changes
-        saveMedicines();
-        saveTrashItems();
-        
-        // Update UI
-        renderInventory();
-        renderTrash();
-        updateInventorySummary();
-        updateTrashCounter();
-        
-        showToast('Medicine restored to inventory');
-    }
-    
-    /**
-     * Empties the trash (removes all items permanently)
-     */
-    function emptyTrash() {
-        if (trashItems.length === 0) {
-            showToast('Trash is already empty', 'error');
-            return;
-        }
-        
-        trashItems = [];
-        saveTrashItems();
-        renderTrash();
-        updateTrashCounter();
-        
-        showToast('Trash emptied successfully');
-    }
-    
-    /**
-     * Shows the selected panel (inventory or trash)
-     */
-    function showPanel(panelName) {
-        // Get all panels
-        const panels = document.querySelectorAll('.inventory-section, .trash-section');
-        
-        // Get all tab buttons
-        const tabButtons = document.querySelectorAll('.tab-button');
-        
-        // Hide all panels and remove active class from tabs
-        panels.forEach(panel => panel.style.display = 'none');
-        tabButtons.forEach(tab => tab.classList.remove('active'));
-        
-        // Show selected panel and add active class to corresponding tab
-        if (panelName === 'inventory') {
-            document.getElementById('inventory-panel').style.display = 'block';
-            document.getElementById('inventory-tab').classList.add('active');
-        } else if (panelName === 'trash') {
-            document.getElementById('trash-panel').style.display = 'block';
-            document.getElementById('trash-tab-main').classList.add('active');
-            if (document.getElementById('trash-tab')) {
-                document.getElementById('trash-tab').classList.add('active');
-            }
-        }
-    }
-    
-    /**
-     * Checks for items to auto-delete based on user preferences
-     */
-    function checkAutoDelete() {
-        const autoDeleteSetting = localStorage.getItem('autoDeleteDays');
-        
-        if (!autoDeleteSetting || autoDeleteSetting === 'never') {
-            return;
-        }
-        
-        const daysToKeep = parseInt(autoDeleteSetting);
-        const currentDate = new Date();
-        
-        // Filter out items that are older than the auto-delete setting
-        const itemsToKeep = trashItems.filter(item => {
-            const deletedDate = new Date(item.deletedAt);
-            const daysDifference = Math.floor((currentDate - deletedDate) / (1000 * 60 * 60 * 24));
-            return daysDifference < daysToKeep;
-        });
-        
-        // If items were removed, update trash
-        if (itemsToKeep.length < trashItems.length) {
-            trashItems = itemsToKeep;
-            saveTrashItems();
-            renderTrash();
-            updateTrashCounter();
-            
-            const itemsDeleted = trashItems.length - itemsToKeep.length;
-            showToast(`${itemsDeleted} item(s) auto-deleted from trash`);
-        }
-    }
-    
-    /**
-     * Returns human-readable text for auto-delete setting
-     */
-    function getAutoDeleteText(value) {
-        switch (value) {
-            case 'never':
-                return 'Never auto-delete';
-            case '7':
-                return 'Auto-delete after 7 days';
-            case '30':
-                return 'Auto-delete after 30 days';
-            default:
-                return 'Auto-delete setting';
-        }
-    }
-    
-
-    
-    /**
-     * Empties the trash (removes all items permanently)
-     */
-    function emptyTrash() {
-        if (trashItems.length === 0) {
-            showToast('Trash is already empty', 'info');
-            return;
-        }
-        
-        // Clear trash
-        trashItems = [];
-        saveTrashItems();
-        renderTrash();
-        updateTrashCounter();
-        
-        showToast('Trash emptied successfully');
-    }
-    
-    /**
-     * Shows the selected panel (inventory or trash)
-     */
-    function showPanel(panelName) {
-        // Get all panels
-        const panels = document.querySelectorAll('.inventory-section, .trash-section');
-        
-        // Get all tab buttons
-        const tabButtons = document.querySelectorAll('.tab-button');
-        
-        // Hide all panels and remove active class from tabs
-        panels.forEach(panel => panel.style.display = 'none');
-        tabButtons.forEach(tab => tab.classList.remove('active'));
-        
-        // Show selected panel and add active class to corresponding tab
-        if (panelName === 'inventory') {
-            document.getElementById('inventory-panel').style.display = 'block';
-            document.getElementById('inventory-tab').classList.add('active');
-        } else if (panelName === 'trash') {
-            document.getElementById('trash-panel').style.display = 'block';
-            document.getElementById('trash-tab-main').classList.add('active');
-            if (document.getElementById('trash-tab')) {
-                document.getElementById('trash-tab').classList.add('active');
-            }
-            
-            // Refresh trash view when switching to it
-            renderTrash();
-        }
-    }
-    
-    /**
-     * Checks for items to auto-delete based on user preferences
-     */
-    function checkAutoDelete() {
-        const autoDeleteDays = localStorage.getItem('autoDeleteDays') || 'never';
-        
-        if (autoDeleteDays === 'never') return;
-        
-        const daysToKeep = parseInt(autoDeleteDays);
-        const now = new Date();
-        
-        // Filter out items that should be auto-deleted
-        const updatedTrashItems = trashItems.filter(item => {
-            const deletedDate = new Date(item.deletedAt);
-            const daysDifference = Math.floor((now - deletedDate) / (1000 * 60 * 60 * 24));
-            
-            return daysDifference < daysToKeep;
-        });
-        
-        const deletedCount = trashItems.length - updatedTrashItems.length;
-        
-        if (deletedCount > 0) {
-            trashItems = updatedTrashItems;
-            saveTrashItems();
-            renderTrash();
-            updateTrashCounter();
-            showToast(`${deletedCount} item(s) auto-deleted from trash`);
-        }
-    }
-    
-    /**
-     * Returns human-readable text for auto-delete setting
-     */
-    function getAutoDeleteText(value) {
-        switch (value) {
-            case '7': return 'After 7 days';
-            case '30': return 'After 30 days';
-            default: return 'Never';
-        }
-    }
-    
-    if (emptyTrashBtn) {
-        emptyTrashBtn.addEventListener('click', () => {
-            if (trashItems.length > 0) {
-                if (confirm(`Are you sure you want to permanently delete all ${trashItems.length} items in trash?`)) {
-                    emptyTrash();
-                }
-            } else {
-                showToast('Trash is already empty', 'error');
-            }
-        });
-    }
-    
-    if (restoreAllBtn) {
-        restoreAllBtn.addEventListener('click', () => {
-            if (trashItems.length > 0) {
-                if (confirm(`Are you sure you want to restore all ${trashItems.length} items from trash?`)) {
-                    // Restore all items
-                    trashItems.forEach(item => {
-                        const { deletedAt, ...medicineData } = item;
-                        medicines.push(medicineData);
-                    });
-                    
-                    // Clear trash
-                    trashItems = [];
-                    
-                    // Save changes
-                    saveMedicines();
-                    saveTrashItems();
-                    
-                    // Update UI
-                    renderInventory();
-                    renderTrash();
-                    updateInventorySummary();
-                    updateTrashCounter();
-                    
-                    showToast('All items restored successfully');
-                }
-            } else {
-                showToast('No items to restore', 'error');
-            }
-        });
-    }
-    
-    // Update confirm delete button to handle both operations
-    confirmDeleteBtn.addEventListener('click', () => {
-        if (currentDeleteId !== null) {
-            if (currentOperation === 'permanent-delete') {
-                permanentlyDeleteMedicine(currentDeleteId);
-            } else {
-                deleteMedicine(currentDeleteId);
-            }
-            closeModal(confirmModal);
-            currentDeleteId = null;
-        }
-    });
-    
-    // Set up auto-delete select
-    if (autoDeleteSelect) {
-        const savedAutoDelete = localStorage.getItem('autoDeleteDays') || 'never';
-        autoDeleteSelect.value = savedAutoDelete;
-        
-        autoDeleteSelect.addEventListener('change', function() {
-            localStorage.setItem('autoDeleteDays', this.value);
-            checkAutoDelete();
-            showToast(`Auto-delete set to: ${getAutoDeleteText(this.value)}`);
-        });
     }
     
     // Initial check for auto-delete
