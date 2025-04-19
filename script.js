@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     const sortSelect = document.getElementById('sort-select');
     const exportCSVBtn = document.getElementById('export-csv');
+    const exportPDFBtn = document.getElementById('export-pdf');
+    const exportExcelBtn = document.getElementById('export-excel');
+    const exportWordBtn = document.getElementById('export-word');
     const themeToggleBtn = document.getElementById('theme-toggle');
     const totalMedicinesEl = document.getElementById('total-medicines');
     const totalValueEl = document.getElementById('total-value');
@@ -64,8 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
         saveMedicineEdit();
     });
     
-    // Export to CSV
+    // Export buttons
     exportCSVBtn.addEventListener('click', exportToCSV);
+    exportPDFBtn.addEventListener('click', exportToPDF);
+    exportExcelBtn.addEventListener('click', exportToExcel);
+    exportWordBtn.addEventListener('click', exportToWord);
     
     // Theme toggle
     themeToggleBtn.addEventListener('click', toggleTheme);
@@ -345,6 +351,268 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(link);
         
         showToast('Inventory exported to CSV successfully');
+    }
+    
+    /**
+     * Exports inventory data to PDF file
+     */
+    function exportToPDF() {
+        if (medicines.length === 0) {
+            showToast('No data to export', 'error');
+            return;
+        }
+        
+        // Create a hidden div to hold the table for PDF generation
+        const printDiv = document.createElement('div');
+        printDiv.style.display = 'none';
+        
+        // Create the HTML table structure for PDF
+        let tableHTML = `
+            <html>
+            <head>
+                <title>Medical Inventory Report</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    h2 { color: #4a8cca; text-align: center; margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
+                    th { background-color: #f8f9fa; font-weight: bold; }
+                    .summary { margin-top: 20px; text-align: right; font-weight: bold; }
+                    .header { text-align: center; margin-bottom: 30px; }
+                    .date { text-align: right; margin-bottom: 20px; color: #6c757d; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2>Medical Store Inventory Report</h2>
+                </div>
+                <div class="date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Medicine Name</th>
+                            <th>Price (PKR)</th>
+                            <th>Quantity</th>
+                            <th>Total Price (PKR)</th>
+                            <th>Date/Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        // Add data rows
+        medicines.forEach(medicine => {
+            const dateObj = new Date(medicine.dateTime);
+            const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            const totalPrice = medicine.price * medicine.quantity;
+            
+            tableHTML += `
+                <tr>
+                    <td>${medicine.name}</td>
+                    <td>${medicine.price.toFixed(2)}</td>
+                    <td>${medicine.quantity}</td>
+                    <td>${totalPrice.toFixed(2)}</td>
+                    <td>${formattedDate}</td>
+                </tr>
+            `;
+        });
+        
+        // Calculate total inventory value
+        const totalInventoryValue = medicines.reduce((sum, medicine) => {
+            return sum + (medicine.price * medicine.quantity);
+        }, 0);
+        
+        // Add summary
+        tableHTML += `
+                    </tbody>
+                </table>
+                <div class="summary">
+                    <p>Total Medicines: ${medicines.length}</p>
+                    <p>Total Inventory Value: PKR ${totalInventoryValue.toFixed(2)}</p>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        printDiv.innerHTML = tableHTML;
+        document.body.appendChild(printDiv);
+        
+        // Create a temporary window to print from
+        const win = window.open('', '', 'height=700,width=700');
+        win.document.write(tableHTML);
+        win.document.close();
+        
+        // Wait for window to load before printing
+        win.onload = function() {
+            win.focus();
+            win.print();
+            win.close();
+            document.body.removeChild(printDiv);
+        };
+        
+        showToast('Inventory exported to PDF successfully');
+    }
+    
+    /**
+     * Exports inventory data to Excel file
+     */
+    function exportToExcel() {
+        if (medicines.length === 0) {
+            showToast('No data to export', 'error');
+            return;
+        }
+        
+        // Create a worksheet with a formatted header
+        let excelContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+        excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Medical Inventory</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
+        excelContent += '<body>';
+        excelContent += '<table border="1">';
+        excelContent += '<tr style="background-color: #4a8cca; color: white; font-weight: bold;"><th>Medicine Name</th><th>Price (PKR)</th><th>Quantity</th><th>Total Price (PKR)</th><th>Date/Time</th></tr>';
+        
+        // Add data rows
+        medicines.forEach(medicine => {
+            const dateObj = new Date(medicine.dateTime);
+            const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString()}`;
+            const totalPrice = medicine.price * medicine.quantity;
+            
+            excelContent += `<tr>
+                <td>${medicine.name}</td>
+                <td>${medicine.price.toFixed(2)}</td>
+                <td>${medicine.quantity}</td>
+                <td>${totalPrice.toFixed(2)}</td>
+                <td>${formattedDate}</td>
+            </tr>`;
+        });
+        
+        // Calculate total inventory value
+        const totalInventoryValue = medicines.reduce((sum, medicine) => {
+            return sum + (medicine.price * medicine.quantity);
+        }, 0);
+        
+        // Add summary rows
+        excelContent += `<tr><td colspan="5"></td></tr>`;
+        excelContent += `<tr><td colspan="3" style="font-weight: bold; text-align: right;">Total Medicines:</td><td>${medicines.length}</td><td></td></tr>`;
+        excelContent += `<tr><td colspan="3" style="font-weight: bold; text-align: right;">Total Inventory Value:</td><td>PKR ${totalInventoryValue.toFixed(2)}</td><td></td></tr>`;
+        
+        excelContent += '</table></body></html>';
+        
+        // Create Excel data blob
+        const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
+        const url = URL.createObjectURL(blob);
+        
+        // Create download link and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `medical-inventory-${new Date().toISOString().split('T')[0]}.xls`);
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('Inventory exported to Excel successfully');
+    }
+    
+    /**
+     * Exports inventory data to Word file
+     */
+    function exportToWord() {
+        if (medicines.length === 0) {
+            showToast('No data to export', 'error');
+            return;
+        }
+        
+        // Create a Word document structure
+        let wordContent = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' 
+                  xmlns:w='urn:schemas-microsoft-com:office:word'
+                  xmlns='http://www.w3.org/TR/REC-html40'>
+            <head>
+                <meta charset="utf-8">
+                <title>Medical Inventory Report</title>
+                <!--[if gte mso 9]>
+                <xml>
+                    <w:WordDocument>
+                        <w:View>Print</w:View>
+                        <w:Zoom>100</w:Zoom>
+                    </w:WordDocument>
+                </xml>
+                <![endif]-->
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    h1 { color: #4a8cca; text-align: center; }
+                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
+                    th { background-color: #4a8cca; color: white; }
+                    .info { margin: 20px 0; }
+                    .summary { margin-top: 20px; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <h1>Medical Store Inventory Report</h1>
+                <div class="info">
+                    <p>Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Medicine Name</th>
+                            <th>Price (PKR)</th>
+                            <th>Quantity</th>
+                            <th>Total Price (PKR)</th>
+                            <th>Date/Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        // Add data rows
+        medicines.forEach(medicine => {
+            const dateObj = new Date(medicine.dateTime);
+            const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            const totalPrice = medicine.price * medicine.quantity;
+            
+            wordContent += `
+                <tr>
+                    <td>${medicine.name}</td>
+                    <td>${medicine.price.toFixed(2)}</td>
+                    <td>${medicine.quantity}</td>
+                    <td>${totalPrice.toFixed(2)}</td>
+                    <td>${formattedDate}</td>
+                </tr>
+            `;
+        });
+        
+        // Calculate total inventory value
+        const totalInventoryValue = medicines.reduce((sum, medicine) => {
+            return sum + (medicine.price * medicine.quantity);
+        }, 0);
+        
+        // Add summary
+        wordContent += `
+                    </tbody>
+                </table>
+                <div class="summary">
+                    <p>Total Medicines: ${medicines.length}</p>
+                    <p>Total Inventory Value: PKR ${totalInventoryValue.toFixed(2)}</p>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        // Create Word data blob
+        const blob = new Blob([wordContent], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        
+        // Create download link and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `medical-inventory-${new Date().toISOString().split('T')[0]}.doc`);
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('Inventory exported to Word successfully');
     }
     
     /**

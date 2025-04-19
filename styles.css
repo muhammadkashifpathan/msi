@@ -196,6 +196,12 @@ button {
     align-items: center;
 }
 
+.export-options {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .search-container {
     position: relative;
     flex: 1;
@@ -231,6 +237,30 @@ button {
 
 .action-btn:hover {
     background-color: #3a7ab7;
+}
+
+.pdf-btn {
+    background-color: #d9534f;
+}
+
+.pdf-btn:hover {
+    background-color: #c9302c;
+}
+
+.excel-btn {
+    background-color: #5cb85c;
+}
+
+.excel-btn:hover {
+    background-color: #449d44;
+}
+
+.word-btn {
+    background-color: #337ab7;
+}
+
+.word-btn:hover {
+    background-color: #286090;
 }
 
 /* Inventory Summary */
@@ -489,37 +519,26 @@ tr:hover td {
         flex-direction: column;
     }
     
-    thead {
-        display: none;
+    /* Keep the table structure intact but scale it down */
+    .table-container {
+        overflow-x: auto; /* Ensure horizontal scrolling for small screens */
     }
     
-    table, tbody, tr, td {
-        display: block;
-        width: 100%;
+    table {
+        font-size: 0.85rem; /* Smaller font size on mobile */
     }
     
-    tr {
-        margin-bottom: 15px;
-        border-bottom: 2px solid var(--border-color);
-        padding-bottom: 15px;
+    th, td {
+        padding: 8px 10px; /* Smaller padding on mobile */
     }
     
-    td {
-        display: flex;
-        text-align: right;
-        padding: 10px 15px;
-        border-bottom: 1px solid var(--border-color);
+    .export-options {
+        flex-direction: column;
+        align-items: stretch;
     }
     
-    td::before {
-        content: attr(data-label);
-        font-weight: bold;
-        margin-right: auto;
-        text-align: left;
-    }
-    
-    .action-icons {
-        justify-content: flex-end;
+    .export-options .action-btn {
+        margin-bottom: 5px;
     }
 }
 
