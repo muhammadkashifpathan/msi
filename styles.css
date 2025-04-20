@@ -661,10 +661,6 @@ tr:hover td {
         justify-content: center;
     }
     
-    /* .inventory-summary {
-        flex-direction: column;
-    } */
-    
     /* Keep the table structure intact but scale it down */
     /* .table-container {
         overflow-x: auto;
@@ -698,6 +694,10 @@ tr:hover td {
     .restore-btn, .permanent-delete-btn {
         padding: 3px;
         font-size: .5rem;
+    }
+
+    .toast {
+        width: 90%;
     }
 }
 

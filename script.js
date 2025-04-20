@@ -841,31 +841,66 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to print', 'error');
             return;
         }
-
-        // Create a hidden div to hold the table for printing
+    
         const printDiv = document.createElement('div');
         printDiv.style.display = 'none';
-
-        // Create the HTML table structure for printing
+    
         let tableHTML = `
             <html>
             <head>
-                <title>Medical Inventory Report</title>
+                <title>MediRecord - Medicine Record Sheet</title>
                 <style>
-                    body { font-family: Arial, sans-serif; }
-                    h2 { color: #4a8cca; text-align: center; margin-bottom: 20px; }
-                    table { width: 100%; border-collapse: collapse; }
-                    th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
-                    th { background-color: #f8f9fa; font-weight: bold; }
-                    .summary { margin-top: 20px; text-align: right; font-weight: bold; }
-                    .header { text-align: center; margin-bottom: 30px; }
-                    .date { text-align: right; margin-bottom: 20px; color: #6c757d; }
+                    * { box-sizing: border-box; }
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                        display: flex;
+                        flex-direction: column;
+                        min-height: 100vh;
+                    }
+                    h2 {
+                        color: #4a8cca;
+                        text-align: center;
+                        margin-bottom: 10px;
+                    }
+                    .date {
+                        text-align: center;
+                        color: #555;
+                        margin-bottom: 20px;
+                        font-size: 14px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 10px;
+                    }
+                    th, td {
+                        border: 1px solid #ccc;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    th {
+                        background-color: #f1f1f1;
+                        font-weight: bold;
+                    }
+                    .summary {
+                        margin-bottom: 20px;
+                        text-align: right;
+                        font-weight: bold;
+                    }
+                    .footer {
+                        margin-top: auto;
+                        font-size: 12px;
+                        text-align: center;
+                        color: #888;
+                        border-top: 1px solid #ccc;
+                        padding-top: 10px;
+                    }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <h2>Medical Store Inventory Report</h2>
-                </div>
+                <h2>MediRecord: Medicine Record Sheet</h2>
                 <div class="date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
                 <table>
                     <thead>
@@ -879,13 +914,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     </thead>
                     <tbody>
         `;
-
-        // Add data rows
+    
         medicines.forEach(medicine => {
             const dateObj = new Date(medicine.dateTime);
             const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             const totalPrice = medicine.price * medicine.quantity;
-
+    
             tableHTML += `
                 <tr>
                     <td>${medicine.name}</td>
@@ -896,63 +930,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             `;
         });
-
-        // Calculate total inventory value
+    
         const totalInventoryValue = medicines.reduce((sum, medicine) => {
             return sum + (medicine.price * medicine.quantity);
         }, 0);
-
-        // Add summary
+    
         tableHTML += `
                     </tbody>
                 </table>
                 <div class="summary">
                     <p>Total Medicines: ${medicines.length}</p>
-                    <p>Total Inventory Value: PKR ${totalInventoryValue.toFixed(2)}</p>
+                    <p>Total Price: PKR ${totalInventoryValue.toFixed(2)}</p>
+                </div>
+                <div class="footer">
+                    Developed by Muhammad Kashif Pathan<br>
+                    Email: mkpathan08@gmail.com
                 </div>
             </body>
             </html>
         `;
-
+    
         printDiv.innerHTML = tableHTML;
         document.body.appendChild(printDiv);
-
-        // Create a temporary window to print from
+    
         const win = window.open('', '', 'height=700,width=700');
         win.document.write(tableHTML);
         win.document.close();
-
-        // Wait for window to load before printing
+    
         win.onload = function () {
             win.focus();
             win.print();
             win.close();
             document.body.removeChild(printDiv);
         };
-
-        showToast('Inventory printed successfully');
+    
+        showToast('MediRecord printed successfully');
     }
+    
 
     function downloadPDF() {
         if (medicines.length === 0) {
             showToast('No data to export', 'error');
             return;
         }
-
-        // Import jsPDF and autoTable
+    
         const { jsPDF } = window.jspdf;
-
         const doc = new jsPDF();
-
+    
         // Add title
         doc.setFontSize(18);
-        doc.text('Medical Store Inventory Report', 105, 20, { align: 'center' });
-
+        doc.text('Medicine Record Sheet', 105, 20, { align: 'center' });
+    
         // Add date
         doc.setFontSize(12);
         doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 30, { align: 'center' });
-
-        // Add table headers and data
+    
+        // Add table
         const headers = ['Medicine Name', 'Price (PKR)', 'Quantity', 'Total Price (PKR)', 'Date/Time'];
         const data = medicines.map(medicine => {
             const dateObj = new Date(medicine.dateTime);
@@ -960,8 +993,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const totalPrice = medicine.price * medicine.quantity;
             return [medicine.name, medicine.price.toFixed(2), medicine.quantity, totalPrice.toFixed(2), formattedDate];
         });
-
-        // Add table to PDF
+    
         doc.autoTable({
             head: [headers],
             body: data,
@@ -969,17 +1001,24 @@ document.addEventListener('DOMContentLoaded', () => {
             theme: 'grid',
             headStyles: { fillColor: [74, 140, 202] },
         });
-
-        // Add summary
+    
+        // Add summary below table
         const totalMedicines = medicines.length;
         const totalValue = medicines.reduce((sum, medicine) => sum + (medicine.price * medicine.quantity), 0);
-        doc.text(`Total Medicines: ${totalMedicines}`, 14, doc.lastAutoTable.finalY + 10);
-        doc.text(`Total Inventory Value: PKR ${totalValue.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 20);
-
-        // Save the PDF
-        doc.save(`medical-inventory-${new Date().toISOString().split('T')[0]}.pdf`);
-        showToast('Inventory exported to PDF successfully');
+        let finalY = doc.lastAutoTable.finalY + 10;
+        doc.text(`Total Medicines: ${totalMedicines}`, 14, finalY);
+        doc.text(`Total Price: PKR ${totalValue.toFixed(2)}`, 14, finalY + 10);
+    
+        // Add footer with name & email
+        doc.setFontSize(6);
+        doc.text('Developed by Muhammad Kashif Pathan', 14, 285); // Bottom-left
+        doc.text('Email: mkpathan.dev@gmail.com', 14, 290);       // Bottom-left just below name
+    
+        // Save PDF
+        doc.save(`medi-record-${new Date().toISOString().split('T')[0]}.pdf`);
+        showToast('MediRecord exported to PDF successfully');
     }
+    
 
     /**
      * Exports inventory data to Excel file
