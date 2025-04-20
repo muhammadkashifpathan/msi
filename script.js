@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const inventoryBody = document.getElementById('inventory-body');
     const searchInput = document.getElementById('search-input');
     const sortSelect = document.getElementById('sort-select');
-    const exportCSVBtn = document.getElementById('export-csv');
     const exportPDFBtn = document.getElementById('export-pdf');
     const exportExcelBtn = document.getElementById('export-excel');
     const exportWordBtn = document.getElementById('export-word');
@@ -154,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Export buttons
-    exportCSVBtn.addEventListener('click', exportToCSV);
     exportExcelBtn.addEventListener('click', exportToExcel);
     exportWordBtn.addEventListener('click', exportToWord);
     document.getElementById('print-inventory').addEventListener('click', printInventory);
@@ -875,52 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             icon.className = 'fas fa-moon';
         }
-    }
-
-    /**
-     * Exports inventory data to CSV file
-     */
-    function exportToCSV() {
-        if (medicines.length === 0) {
-            showToast('No data to export', 'error');
-            return;
-        }
-
-        // Create CSV header row
-        let csvContent = 'Medicine Name,Price (PKR),Discount (%),Final Price (PKR),Quantity,Total Price (PKR)\n';
-
-        // Add medicine data rows
-        medicines.forEach(medicine => {
-            // Get discount from medicine or default to 0
-            const discount = medicine.discount || 0;
-            
-            // Calculate final price after discount if not already present
-            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-            
-            // Calculate total price based on final price and quantity
-            const totalPrice = finalPrice * medicine.quantity;
-
-            // Escape commas in name if present
-            const escapedName = medicine.name.includes(',') ? `"${medicine.name}"` : medicine.name;
-
-            csvContent += `${escapedName},${medicine.price.toFixed(2)},${discount.toFixed(1)},${finalPrice.toFixed(2)},${medicine.quantity},${totalPrice.toFixed(2)}\n`;
-        });
-
-        // Create CSV data blob
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-
-        // Create download link and trigger download
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `medical-inventory-${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        showToast('Inventory exported to CSV successfully');
-    }
+    }    
 
     /**
      * Exports inventory data to PDF file
@@ -930,10 +883,10 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to print', 'error');
             return;
         }
-
+    
         const printDiv = document.createElement('div');
         printDiv.style.display = 'none';
-
+    
         let tableHTML = `
             <html>
             <head>
@@ -975,7 +928,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     .summary {
                         margin-bottom: 20px;
-                        text-align: right;
+                        text-align: left;
                         font-weight: bold;
                     }
                     .footer {
@@ -1004,68 +957,67 @@ document.addEventListener('DOMContentLoaded', () => {
                     </thead>
                     <tbody>
         `;
-
+    
+        let totalActual = 0;
+        let totalFinal = 0;
+    
         medicines.forEach(medicine => {
-            // Get discount from medicine or default to 0
             const discount = medicine.discount || 0;
-            
-            // Calculate final price after discount if not already present
             const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-            
-            // Calculate total price based on final price and quantity
             const totalPrice = finalPrice * medicine.quantity;
-
+    
+            const actualPrice = medicine.price * medicine.quantity;
+            totalActual += actualPrice;
+            totalFinal += totalPrice;
+    
             tableHTML += `
                 <tr>
                     <td>${medicine.name}</td>
                     <td>${medicine.price.toFixed(2)}</td>
-                    <td>${discount.toFixed(1)}</td>
+                    <td>${discount.toFixed(1)}%</td>
                     <td>${finalPrice.toFixed(2)}</td>
                     <td>${medicine.quantity}</td>
                     <td>${totalPrice.toFixed(2)}</td>
                 </tr>
             `;
         });
-
-        const totalInventoryValue = medicines.reduce((sum, medicine) => {
-            // Get discount from medicine or default to 0
-            const discount = medicine.discount || 0;
-            // Calculate final price after discount if not already present
-            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-            return sum + (finalPrice * medicine.quantity);
-        }, 0);
-
+    
+        const totalDiscount = totalActual - totalFinal;
+    
         tableHTML += `
                     </tbody>
                 </table>
                 <div class="summary">
                     <p>Total Medicines: ${medicines.length}</p>
-                    <p>Total Price: PKR ${totalInventoryValue.toFixed(2)}</p>
+                    <p>Total Price (Before Discount): PKR ${totalActual.toFixed(2)}</p>
+                    <p>Total Discount: PKR ${totalDiscount.toFixed(2)}</p>
+                    <p>Total Price (After Discount): PKR ${totalFinal.toFixed(2)}</p>
                 </div>
                 <div class="footer">
                     Developed by Muhammad Kashif Pathan<br>
-                    Email: mkpathan08@gmail.com
+                    Email: mkpathan.dev@gmail.com
                 </div>
             </body>
             </html>
         `;
-
+    
         printDiv.innerHTML = tableHTML;
         document.body.appendChild(printDiv);
-
+    
         const win = window.open('', '', 'height=700,width=700');
         win.document.write(tableHTML);
         win.document.close();
-
+    
         win.onload = function () {
             win.focus();
             win.print();
             win.close();
             document.body.removeChild(printDiv);
         };
-
+    
         showToast('MediRecord printed successfully');
     }
+    
 
 
     function downloadPDF() {
@@ -1073,70 +1025,80 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to export', 'error');
             return;
         }
-
+    
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-
+    
         // Add title
         doc.setFontSize(18);
         doc.text('Medicine Record Sheet', 105, 20, { align: 'center' });
-
+    
         // Add date
         doc.setFontSize(12);
         doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 30, { align: 'center' });
-
-        // Add table
-        const headers = ['Medicine Name', 'Price (PKR)', 'Discount (%)', 'Final Price (PKR)', 'Quantity', 'Total Price (PKR)'];
-        const data = medicines.map(medicine => {
-            // Get discount from medicine or default to 0
-            const discount = medicine.discount || 0;
-            
-            // Calculate final price after discount if not already present
-            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-            
-            // Calculate total price based on final price and quantity
-            const totalPrice = finalPrice * medicine.quantity;
-            
+    
+        // Table headers
+        const headers = ['Medicine Name', 'Price (PKR)', 'Discount (%)', 'Final Price (PKR)', 'Quantity', 'Total (PKR)'];
+        
+        // Table data
+        const data = medicines.map(med => {
+            const discount = med.discount || 0;
+            const finalPrice = med.finalPrice || (med.price - (med.price * discount / 100));
+            const totalPrice = finalPrice * med.quantity;
+    
             return [
-                medicine.name, 
-                medicine.price.toFixed(2), 
-                discount.toFixed(1), 
-                finalPrice.toFixed(2), 
-                medicine.quantity, 
+                med.name,
+                med.price.toFixed(2),
+                discount.toFixed(1),
+                finalPrice.toFixed(2),
+                med.quantity,
                 totalPrice.toFixed(2)
             ];
         });
-
+    
+        // Add table to PDF
         doc.autoTable({
             head: [headers],
             body: data,
             startY: 40,
             theme: 'grid',
-            headStyles: { fillColor: [74, 140, 202] },
+            headStyles: { fillColor: [74, 140, 202] }
         });
-
-        // Add summary below table
+    
+        // Summary calculations
         const totalMedicines = medicines.length;
-        const totalValue = medicines.reduce((sum, medicine) => {
-            // Get discount from medicine or default to 0
-            const discount = medicine.discount || 0;
-            // Calculate final price after discount if not already present
-            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-            return sum + (finalPrice * medicine.quantity);
-        }, 0);
-        let finalY = doc.lastAutoTable.finalY + 10;
-        doc.text(`Total Medicines: ${totalMedicines}`, 14, finalY);
-        doc.text(`Total Price: PKR ${totalValue.toFixed(2)}`, 14, finalY + 10);
-
-        // Add footer with name & email
-        doc.setFontSize(6);
-        doc.text('Developed by Muhammad Kashif Pathan', 14, 285); // Bottom-left
-        doc.text('Email: mkpathan.dev@gmail.com', 14, 290);       // Bottom-left just below name
-
-        // Save PDF
+        let totalActual = 0;
+        let totalFinal = 0;
+    
+        medicines.forEach(med => {
+            const discount = med.discount || 0;
+            const actual = med.price * med.quantity;
+            const final = (med.finalPrice || (med.price - (med.price * discount / 100))) * med.quantity;
+    
+            totalActual += actual;
+            totalFinal += final;
+        });
+    
+        const totalDiscount = totalActual - totalFinal;
+    
+        // Summary
+        const summaryY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(11);
+        doc.text(`Total Medicines: ${totalMedicines}`, 14, summaryY);
+        doc.text(`Total Price (Before Discount): PKR ${totalActual.toFixed(2)}`, 14, summaryY + 10);
+        doc.text(`Total Discount: PKR ${totalDiscount.toFixed(2)}`, 14, summaryY + 20);
+        doc.text(`Total Price (After Discount): PKR ${totalFinal.toFixed(2)}`, 14, summaryY + 30);
+    
+        // Developer footer
+        doc.setFontSize(8);
+        doc.text('Developed by Muhammad Kashif Pathan', 105, 285, { align: 'center' });
+        doc.text('Email: mkpathan.dev@gmail.com', 105, 290, { align: 'center' });
+    
+        // Save file
         doc.save(`medi-record-${new Date().toISOString().split('T')[0]}.pdf`);
         showToast('MediRecord exported to PDF successfully');
     }
+    
 
 
     /**
@@ -1147,65 +1109,72 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to export', 'error');
             return;
         }
-
-        // Create a worksheet with a formatted header
-        let excelContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-        excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Medical Inventory</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
-        excelContent += '<body>';
-        excelContent += '<table border="1">';
-        excelContent += '<tr style="background-color: #4a8cca; color: white; font-weight: bold;"><th>Medicine Name</th><th>Price (PKR)</th><th>Discount (%)</th><th>Quantity</th><th>Total Price (PKR)</th></tr>';
-
-        // Add data rows
+    
+        let table = `
+            <table>
+                <tr>
+                    <th>Medicine Name</th>
+                    <th>Price (PKR)</th>
+                    <th>Discount (%)</th>
+                    <th>Final Price (PKR)</th>
+                    <th>Quantity</th>
+                    <th>Total Price (PKR)</th>
+                </tr>
+        `;
+    
+        let totalActual = 0;
+        let totalFinal = 0;
+    
         medicines.forEach(medicine => {
-            // Get discount from medicine or default to 0
             const discount = medicine.discount || 0;
-            
-            // Calculate final price after discount if not already present
             const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-            
-            // Calculate total price based on final price and quantity
             const totalPrice = finalPrice * medicine.quantity;
-
-            excelContent += `<tr>
-                <td>${medicine.name}</td>
-                <td>${medicine.price.toFixed(2)}</td>
-                <td>${discount.toFixed(1)}</td>
-                <td>${medicine.quantity}</td>
-                <td>${totalPrice.toFixed(2)}</td>
-            </tr>`;
+            const actualPrice = medicine.price * medicine.quantity;
+    
+            totalActual += actualPrice;
+            totalFinal += totalPrice;
+    
+            table += `
+                <tr>
+                    <td>${medicine.name}</td>
+                    <td>${medicine.price.toFixed(2)}</td>
+                    <td>${discount.toFixed(1)}</td>
+                    <td>${finalPrice.toFixed(2)}</td>
+                    <td>${medicine.quantity}</td>
+                    <td>${totalPrice.toFixed(2)}</td>
+                </tr>
+            `;
         });
-
-        // Calculate total inventory value using final price after discount
-        const totalInventoryValue = medicines.reduce((sum, medicine) => {
-            // Get discount from medicine or default to 0
-            const discount = medicine.discount || 0;
-            // Calculate final price after discount if not already present
-            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-            return sum + (finalPrice * medicine.quantity);
-        }, 0);
-
-        // Add summary rows
-        excelContent += `<tr><td colspan="6"></td></tr>`;
-        excelContent += `<tr><td colspan="4" style="font-weight: bold; text-align: right;">Total Medicines:</td><td>${medicines.length}</td><td></td></tr>`;
-        excelContent += `<tr><td colspan="4" style="font-weight: bold; text-align: right;">Total Inventory Value:</td><td>PKR ${totalInventoryValue.toFixed(2)}</td><td></td></tr>`;
-
-        excelContent += '</table></body></html>';
-
-        // Create Excel data blob
-        const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
+    
+        const totalDiscount = totalActual - totalFinal;
+    
+        table += `
+            </table>
+            <br>
+            <table>
+                <tr><td><strong>Total Medicines:</strong></td><td>${medicines.length}</td></tr>
+                <tr><td><strong>Total Price (Before Discount):</strong></td><td>PKR ${totalActual.toFixed(2)}</td></tr>
+                <tr><td><strong>Total Discount:</strong></td><td>PKR ${totalDiscount.toFixed(2)}</td></tr>
+                <tr><td><strong>Total Price (After Discount):</strong></td><td>PKR ${totalFinal.toFixed(2)}</td></tr>
+            </table>
+            <br><br>
+        `;
+    
+        const blob = new Blob([table], {
+            type: 'application/vnd.ms-excel;charset=utf-8;'
+        });
+    
         const url = URL.createObjectURL(blob);
-
-        // Create download link and trigger download
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `medical-inventory-${new Date().toISOString().split('T')[0]}.xls`);
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        showToast('Inventory exported to Excel successfully');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `medi-record-${new Date().toISOString().split('T')[0]}.xls`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    
+        showToast('MediRecord exported to Excel successfully');
     }
+    
 
     /**
      * Exports inventory data to Word file
@@ -1215,62 +1184,62 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to export', 'error');
             return;
         }
-
-        // Create a Word document structure
+    
         let wordContent = `
-            <html xmlns:o='urn:schemas-microsoft-com:office:office' 
-                xmlns:w='urn:schemas-microsoft-com:office:word'
-                xmlns='http://www.w3.org/TR/REC-html40'>
+            <html xmlns:o='urn:schemas-microsoft-com:office:office'
+                  xmlns:w='urn:schemas-microsoft-com:office:word'
+                  xmlns='http://www.w3.org/TR/REC-html40'>
             <head>
-                <meta charset="utf-8">
-                <title>Medical Store Inventory Report</title>
-                <!--[if gte mso 9]>
-                <xml>
-                    <w:WordDocument>
-                        <w:View>Print</w:View>
-                        <w:Zoom>100</w:Zoom>
-                        <w:DoNotOptimizeForBrowser/>
-                    </w:WordDocument>
-                </xml>
-                <![endif]-->
+                <title>MediRecord</title>
                 <style>
-                    body { font-family: Arial, sans-serif; }
-                    h1 { color: #4a8cca; text-align: center; }
-                    table { width: 100%; border-collapse: collapse; }
-                    th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
-                    th { background-color: #f8f9fa; }
-                    .date { text-align: right; margin-bottom: 20px; color: #6c757d; }
-                    .summary { margin-top: 20px; text-align: right; font-weight: bold; }
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        min-height: 100vh;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+                    th, td {
+                        border: 1px solid #ccc;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    th {
+                        background-color: #f1f1f1;
+                    }
                 </style>
             </head>
             <body>
-                <h1>Medical Store Inventory Report</h1>
-                <div class="date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Medicine Name</th>
-                            <th>Price (PKR)</th>
-                            <th>Discount (%)</th>
-                            <th>Final Price (PKR)</th>
-                            <th>Quantity</th>
-                            <th>Total Price (PKR)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <h2 style="text-align:center;">MediRecord: Medicine Record Sheet</h2>
+            <p style="text-align:center;">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Medicine Name</th>
+                        <th>Price (PKR)</th>
+                        <th>Discount (%)</th>
+                        <th>Final Price (PKR)</th>
+                        <th>Quantity</th>
+                        <th>Total Price (PKR)</th>
+                    </tr>
+                </thead>
+                <tbody>
         `;
-
-        // Add data rows
+    
+        let totalActual = 0;
+        let totalFinal = 0;
+    
         medicines.forEach(medicine => {
-            // Get discount from medicine or default to 0
             const discount = medicine.discount || 0;
-            
-            // Calculate final price after discount if not already present
             const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-            
-            // Calculate total price based on final price and quantity
             const totalPrice = finalPrice * medicine.quantity;
-
+            const actualPrice = medicine.price * medicine.quantity;
+    
+            totalActual += actualPrice;
+            totalFinal += totalPrice;
+    
             wordContent += `
                 <tr>
                     <td>${medicine.name}</td>
@@ -1282,43 +1251,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             `;
         });
-
-        // Calculate total inventory value using final price after discount
-        const totalInventoryValue = medicines.reduce((sum, medicine) => {
-            // Get discount from medicine or default to 0
-            const discount = medicine.discount || 0;
-            // Calculate final price after discount if not already present
-            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-            return sum + (finalPrice * medicine.quantity);
-        }, 0);
-
-        // Add summary
+    
+        const totalDiscount = totalActual - totalFinal;
+    
         wordContent += `
-                    </tbody>
-                </table>
-                <div class="summary">
-                    <p>Total Medicines: ${medicines.length}</p>
-                    <p>Total Inventory Value: PKR ${totalInventoryValue.toFixed(2)}</p>
-                </div>
-            </body>
-            </html>
+                </tbody>
+            </table>
+            <br>
+            <p><strong>Total Medicines:</strong> ${medicines.length}</p>
+            <p><strong>Total Price (Before Discount):</strong> PKR ${totalActual.toFixed(2)}</p>
+            <p><strong>Total Discount:</strong> PKR ${totalDiscount.toFixed(2)}</p>
+            <p><strong>Total Price (After Discount):</strong> PKR ${totalFinal.toFixed(2)}</p>
+    
+            </body></html>
         `;
-
-        // Create Word data blob
-        const blob = new Blob([wordContent], { type: 'application/msword' });
+    
+        const blob = new Blob(['\ufeff', wordContent], { type: 'application/msword' });
         const url = URL.createObjectURL(blob);
-
-        // Create download link and trigger download
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `medical-inventory-${new Date().toISOString().split('T')[0]}.doc`);
-        link.style.display = 'none';
+        link.download = `medi-record-${new Date().toISOString().split('T')[0]}.doc`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-
-        showToast('Inventory exported to Word successfully');
+    
+        showToast('MediRecord exported to Word successfully');
     }
+    
+    
+    
 
     // Initial check for auto-delete
     checkAutoDelete();

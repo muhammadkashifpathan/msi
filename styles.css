@@ -212,7 +212,7 @@ button {
     padding: 20px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
     flex-wrap: wrap;
     gap: 15px;
     border-bottom: 1px solid var(--border-color);
@@ -274,7 +274,6 @@ button {
     font-weight: 500;
     flex: 1;
     min-width: 90px;
-    max-width: 150px;
 }
 
 .action-btn:hover {
