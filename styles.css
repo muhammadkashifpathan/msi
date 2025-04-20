@@ -465,12 +465,15 @@ tr:hover td {
     }
 }
 
-.modal-header {
-    padding-bottom: 15px;
+.modal-content .modal-header {
+    padding: 15px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+.confirm-content .modal-header {
+    padding: 0;
 }
 
 .close-btn {
@@ -506,8 +509,12 @@ tr:hover td {
 }
 
 .cancel-btn {
-    background-color: var(--secondary-color);
-    color: white;
+    background-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.trash-actions button {
+    min-width: 134px;
 }
 
 .delete-btn {
@@ -574,7 +581,6 @@ tr:hover td {
 }
 .tabs-container .tabs .tab-button.active {
     color: white;
-    background-color: var(--primary-color);
 }
 
 /* Trash Section */
@@ -660,6 +666,24 @@ tr:hover td {
 
     .sort-container {
         width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sort-container select {
+        width: 100%;
+    }
+
+    .auto-delete-container {
+        width: 100%;
+        display: flex;
+    }
+    .auto-delete-container select,
+    .auto-delete-container label {
+        flex: 1;
+    }
+    .trash-actions .trash-buttons {
+        width: 100%;
     }
 
     .action-btn {
@@ -716,15 +740,6 @@ tr:hover td {
 
     .inventory-actions {
         flex-direction: column;
-    }
-
-    .sort-container {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .sort-container select {
-        width: 100%;
     }
 
     .summary-item {
