@@ -385,10 +385,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 tr.innerHTML = `
                     <td data-label="Medicine Name">${item.name}</td>
-                    <td data-label="Price">PKR ${item.price.toFixed(2)}</td>
+                    <td data-label="Price">${item.price.toFixed(2)}</td>
                     <td data-label="Discount">${discount.toFixed(1)} %</td>
                     <td data-label="Quantity">${item.quantity}</td>
-                    <td data-label="Final Price">PKR ${totalPrice.toFixed(2)}</td>
+                    <td data-label="Final Price">${totalPrice.toFixed(2)}</td>
                     <td data-label="Days in Trash">${autoDeleteText}</td>
                     <td data-label="Actions">
                         <button class="restore-btn" data-id="${item.id}" title="Restore">
