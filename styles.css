@@ -319,7 +319,7 @@ button {
 
 .summary-item {
     flex: 1;
-    min-width: 150px;
+    min-width: 200px;
 }
 
 .summary-item h3 {
@@ -329,8 +329,12 @@ button {
 }
 
 .summary-item p {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 600;
+}
+
+.price-breakdown .final-value {
+    color: #00c200;
 }
 
 /* Table Styles */
@@ -563,12 +567,15 @@ tr:hover td {
     cursor: pointer;
     font-weight: 500;
     background-color: var(--container-bg);
-    color: var(--secondary-color);
+    color: var(--text-color);
 }
 
 .tab-button.active {
     background-color: var(--primary-color);
+}
+.tabs-container .tabs .tab-button.active {
     color: white;
+    background-color: var(--primary-color);
 }
 
 /* Trash Section */
@@ -643,7 +650,7 @@ tr:hover td {
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
     .inventory-actions {
         width: 100%;
     }
@@ -660,16 +667,11 @@ tr:hover td {
         flex: 1;
         justify-content: center;
     }
-    
-    /* Keep the table structure intact but scale it down */
-    /* .table-container {
-        overflow-x: auto;
-    } */
-    
+
     table {
         font-size: 2vw;
     }
-    
+
     th, td {
         padding: 6px 4px;
     }
@@ -682,7 +684,7 @@ tr:hover td {
     .action-icons .delete-btn {
         padding: 3px;
     }
-    
+
     .export-options .action-btn {
         margin-bottom: 5px;
     }
@@ -706,25 +708,37 @@ tr:hover td {
         padding: 10px;
     }
     .app-controls {
-        gap: 10px;
+        gap: 0;
     }
-    .app-controls button, .app-controls div button {
-        padding: 0;
-    }
+    
     form {
         grid-template-columns: 1fr;
     }
-    
+
     .inventory-actions {
         flex-direction: column;
     }
-    
+
     .sort-container {
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
     .sort-container select {
         width: 100%;
+    }
+
+    .summary-item {
+        margin-bottom: 20px;
+    }
+
+    .summary-item p {
+        font-size: 1rem;
+    }
+    .add-medicine-section,
+    .inventory-header,
+    .inventory-summary,
+    .trash-header {
+        padding: 20px 10px;
     }
 }

@@ -58,42 +58,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // Predefined list of medicines
     const medicineList = [
         "Paracetamol",
-  "Ibuprofen",
-  "Aspirin",
-  "Diclofenac",
-  "Naproxen",
-  "Cetirizine",
-  "Loratadine",
-  "Chlorpheniramine",
-  "Montelukast",
-  "Levocetirizine",
-  "Amoxicillin",
-  "Azithromycin",
-  "Ciprofloxacin",
-  "Cefixime",
-  "Metronidazole",
-  "Omeprazole",
-  "Ranitidine",
-  "Esomeprazole",
-  "Domperidone",
-  "Loperamide",
-  "Metformin",
-  "Glimepiride",
-  "Amlodipine",
-  "Atenolol",
-  "Losartan",
-  "Diazepam",
-  "Alprazolam",
-  "Sertraline",
-  "Fluoxetine",
-  "Fluconazole",
-  "Clotrimazole",
-  "Acyclovir",
-  "Multivitamins",
-  "Calcium Tablets",
-  "Iron Supplements",
-  "ORS Sachets",
-  "Vitamin D3"
+        "Ibuprofen",
+        "Aspirin",
+        "Diclofenac",
+        "Naproxen",
+        "Cetirizine",
+        "Loratadine",
+        "Chlorpheniramine",
+        "Montelukast",
+        "Levocetirizine",
+        "Amoxicillin",
+        "Azithromycin",
+        "Ciprofloxacin",
+        "Cefixime",
+        "Metronidazole",
+        "Omeprazole",
+        "Ranitidine",
+        "Esomeprazole",
+        "Domperidone",
+        "Loperamide",
+        "Metformin",
+        "Glimepiride",
+        "Amlodipine",
+        "Atenolol",
+        "Losartan",
+        "Diazepam",
+        "Alprazolam",
+        "Sertraline",
+        "Fluoxetine",
+        "Fluconazole",
+        "Clotrimazole",
+        "Acyclovir",
+        "Multivitamins",
+        "Calcium Tablets",
+        "Iron Supplements",
+        "ORS Sachets",
+        "Vitamin D3"
     ];
 
     // Populate the datalist with medicine suggestions
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         option.value = medicine;
         datalist.appendChild(option);
     });
-    
+
 
     // Render initial inventory and trash
     renderInventory();
@@ -252,10 +252,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function addMedicine() {
         const nameInput = document.getElementById('medicine-name');
         const priceInput = document.getElementById('medicine-price');
+        const discountInput = document.getElementById('medicine-discount');
         const quantityInput = document.getElementById('medicine-quantity');
 
         const name = nameInput.value.trim();
         const price = parseFloat(priceInput.value);
+        const discount = parseFloat(discountInput.value) || 0;
         const quantity = parseInt(quantityInput.value);
 
         if (!name || isNaN(price) || isNaN(quantity)) {
@@ -263,10 +265,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Calculate final price after discount
+        const finalPrice = price - (price * discount / 100);
+
         const newMedicine = {
             id: Date.now().toString(),
             name,
             price,
+            discount,
+            finalPrice,
             quantity,
             dateTime: new Date().toISOString()
         };
@@ -278,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         nameInput.value = '';
         priceInput.value = '';
+        discountInput.value = '0';
         quantityInput.value = '';
 
         showToast('Medicine added successfully');
@@ -311,18 +319,21 @@ document.addEventListener('DOMContentLoaded', () => {
             filteredMedicines.forEach(medicine => {
                 const tr = document.createElement('tr');
 
-                const dateObj = new Date(medicine.dateTime);
-                const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
-                // Calculate total price for this medicine
-                const totalPrice = medicine.price * medicine.quantity;
+                // Get discount from medicine or default to 0
+                const discount = medicine.discount || 0;
+                
+                // Calculate final price after discount
+                const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+                
+                // Calculate total price based on final price and quantity
+                const totalPrice = finalPrice * medicine.quantity;
 
                 tr.innerHTML = `
                     <td data-label="Medicine Name">${medicine.name}</td>
-                    <td data-label="Price (PKR)">${medicine.price.toFixed(2)}</td>
+                    <td data-label="Price">${medicine.price.toFixed(2)}</td>
+                    <td data-label="Discount">${discount.toFixed(1)} %</td>
                     <td data-label="Quantity">${medicine.quantity}</td>
-                    <td data-label="Total Price (PKR)">${totalPrice.toFixed(2)}</td>
-                    <td data-label="Date/Time">${formattedDate}</td>
+                    <td data-label="Final Price">${totalPrice.toFixed(2)}</td>
                     <td data-label="Actions">
                         <div class="action-icons">
                             <button class="edit-btn" data-id="${medicine.id}"><i class="fas fa-edit"></i></button>
@@ -365,14 +376,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const autoDeleteSetting = localStorage.getItem('autoDeleteDays') || 'never';
                 const autoDeleteText = autoDeleteSetting === 'never' ? 'Never' : `${autoDeleteSetting} days`;
 
+                // Get discount from item or default to 0
+                const discount = item.discount || 0;
+                
+                // Calculate final price after discount
+                const finalPrice = item.finalPrice || (item.price - (item.price * discount / 100));
+                
+                // Calculate total price based on final price and quantity
+                const totalPrice = finalPrice * item.quantity;
+
                 tr.innerHTML = `
-                    <td>${item.name}</td>
-                    <td>PKR ${item.price.toFixed(2)}</td>
-                    <td>${item.quantity}</td>
-                    <td>PKR ${(item.price * item.quantity).toFixed(2)}</td>
-                    <td>${deletedDate.toLocaleDateString()}</td>
-                    <td>${autoDeleteText}</td>
-                    <td>
+                    <td data-label="Medicine Name">${item.name}</td>
+                    <td data-label="Price">PKR ${item.price.toFixed(2)}</td>
+                    <td data-label="Discount">${discount.toFixed(1)} %</td>
+                    <td data-label="Quantity">${item.quantity}</td>
+                    <td data-label="Final Price">PKR ${totalPrice.toFixed(2)}</td>
+                    <td data-label="Days in Trash">${autoDeleteText}</td>
+                    <td data-label="Actions">
                         <button class="restore-btn" data-id="${item.id}" title="Restore">
                             <i class="fas fa-undo-alt"></i>
                         </button>
@@ -417,12 +437,42 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function updateInventorySummary() {
         const totalMedicines = medicines.length;
-        const totalValue = medicines.reduce((sum, medicine) => {
-            return sum + (medicine.price * medicine.quantity);
-        }, 0);
+        
+        // Calculate totals including actual price, discount savings, and final price
+        let totalActualValue = 0;
+        let totalDiscountValue = 0;
+        let totalFinalValue = 0;
+        
+        medicines.forEach(medicine => {
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            
+            // Calculate actual price (before discount)
+            const actualItemTotal = medicine.price * medicine.quantity;
+            totalActualValue += actualItemTotal;
+            
+            // Calculate final price after discount
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            const finalItemTotal = finalPrice * medicine.quantity;
+            totalFinalValue += finalItemTotal;
+            
+            // Calculate discount amount
+            totalDiscountValue += (actualItemTotal - finalItemTotal);
+        });
 
+        // Update the elements
         totalMedicinesEl.textContent = totalMedicines;
-        totalValueEl.textContent = `PKR ${totalValue.toFixed(2)}`;
+        
+        // Create a summary with actual, discount, and final prices
+        const summaryHTML = `
+            <div class="price-breakdown">
+                <div class="total-price">Total Price: PKR ${totalActualValue.toFixed(2)}</div>
+                <div class="discount">Discount: PKR ${totalDiscountValue.toFixed(2)}</div>
+                <div class="final-value">Final Price: PKR ${totalFinalValue.toFixed(2)}</div>
+            </div>
+        `;
+        
+        totalValueEl.innerHTML = summaryHTML;
     }
 
     /**
@@ -485,6 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-id').value = medicine.id;
         document.getElementById('edit-name').value = medicine.name;
         document.getElementById('edit-price').value = medicine.price;
+        document.getElementById('edit-discount').value = medicine.discount || 0;
         document.getElementById('edit-quantity').value = medicine.quantity;
 
         openModal(editModal);
@@ -545,12 +596,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = document.getElementById('edit-id').value;
         const name = document.getElementById('edit-name').value.trim();
         const price = parseFloat(document.getElementById('edit-price').value);
+        const discount = parseFloat(document.getElementById('edit-discount').value) || 0;
         const quantity = parseInt(document.getElementById('edit-quantity').value);
 
         if (!name || isNaN(price) || isNaN(quantity)) {
             showToast('Please fill all fields correctly', 'error');
             return;
         }
+
+        // Calculate final price after discount
+        const finalPrice = price - (price * discount / 100);
 
         // Find and update the medicine
         const index = medicines.findIndex(med => med.id === id);
@@ -559,6 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ...medicines[index],
                 name,
                 price,
+                discount,
+                finalPrice,
                 quantity
             };
 
@@ -830,18 +887,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Create CSV header row
-        let csvContent = 'Medicine Name,Price (PKR),Quantity,Total Price (PKR),Date/Time\n';
+        let csvContent = 'Medicine Name,Price (PKR),Discount (%),Final Price (PKR),Quantity,Total Price (PKR)\n';
 
         // Add medicine data rows
         medicines.forEach(medicine => {
-            const dateObj = new Date(medicine.dateTime);
-            const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString()}`;
-            const totalPrice = medicine.price * medicine.quantity;
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            
+            // Calculate final price after discount if not already present
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            
+            // Calculate total price based on final price and quantity
+            const totalPrice = finalPrice * medicine.quantity;
 
             // Escape commas in name if present
             const escapedName = medicine.name.includes(',') ? `"${medicine.name}"` : medicine.name;
 
-            csvContent += `${escapedName},${medicine.price.toFixed(2)},${medicine.quantity},${totalPrice.toFixed(2)},"${formattedDate}"\n`;
+            csvContent += `${escapedName},${medicine.price.toFixed(2)},${discount.toFixed(1)},${finalPrice.toFixed(2)},${medicine.quantity},${totalPrice.toFixed(2)}\n`;
         });
 
         // Create CSV data blob
@@ -868,10 +930,10 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to print', 'error');
             return;
         }
-    
+
         const printDiv = document.createElement('div');
         printDiv.style.display = 'none';
-    
+
         let tableHTML = `
             <html>
             <head>
@@ -934,34 +996,45 @@ document.addEventListener('DOMContentLoaded', () => {
                         <tr>
                             <th>Medicine Name</th>
                             <th>Price (PKR)</th>
+                            <th>Discount (%)</th>
+                            <th>Final Price (PKR)</th>
                             <th>Quantity</th>
                             <th>Total Price (PKR)</th>
-                            <th>Date/Time</th>
                         </tr>
                     </thead>
                     <tbody>
         `;
-    
+
         medicines.forEach(medicine => {
-            const dateObj = new Date(medicine.dateTime);
-            const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-            const totalPrice = medicine.price * medicine.quantity;
-    
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            
+            // Calculate final price after discount if not already present
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            
+            // Calculate total price based on final price and quantity
+            const totalPrice = finalPrice * medicine.quantity;
+
             tableHTML += `
                 <tr>
                     <td>${medicine.name}</td>
                     <td>${medicine.price.toFixed(2)}</td>
+                    <td>${discount.toFixed(1)}</td>
+                    <td>${finalPrice.toFixed(2)}</td>
                     <td>${medicine.quantity}</td>
                     <td>${totalPrice.toFixed(2)}</td>
-                    <td>${formattedDate}</td>
                 </tr>
             `;
         });
-    
+
         const totalInventoryValue = medicines.reduce((sum, medicine) => {
-            return sum + (medicine.price * medicine.quantity);
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            // Calculate final price after discount if not already present
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            return sum + (finalPrice * medicine.quantity);
         }, 0);
-    
+
         tableHTML += `
                     </tbody>
                 </table>
@@ -976,51 +1049,64 @@ document.addEventListener('DOMContentLoaded', () => {
             </body>
             </html>
         `;
-    
+
         printDiv.innerHTML = tableHTML;
         document.body.appendChild(printDiv);
-    
+
         const win = window.open('', '', 'height=700,width=700');
         win.document.write(tableHTML);
         win.document.close();
-    
+
         win.onload = function () {
             win.focus();
             win.print();
             win.close();
             document.body.removeChild(printDiv);
         };
-    
+
         showToast('MediRecord printed successfully');
     }
-    
+
 
     function downloadPDF() {
         if (medicines.length === 0) {
             showToast('No data to export', 'error');
             return;
         }
-    
+
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-    
+
         // Add title
         doc.setFontSize(18);
         doc.text('Medicine Record Sheet', 105, 20, { align: 'center' });
-    
+
         // Add date
         doc.setFontSize(12);
         doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 30, { align: 'center' });
-    
+
         // Add table
-        const headers = ['Medicine Name', 'Price (PKR)', 'Quantity', 'Total Price (PKR)', 'Date/Time'];
+        const headers = ['Medicine Name', 'Price (PKR)', 'Discount (%)', 'Final Price (PKR)', 'Quantity', 'Total Price (PKR)'];
         const data = medicines.map(medicine => {
-            const dateObj = new Date(medicine.dateTime);
-            const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-            const totalPrice = medicine.price * medicine.quantity;
-            return [medicine.name, medicine.price.toFixed(2), medicine.quantity, totalPrice.toFixed(2), formattedDate];
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            
+            // Calculate final price after discount if not already present
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            
+            // Calculate total price based on final price and quantity
+            const totalPrice = finalPrice * medicine.quantity;
+            
+            return [
+                medicine.name, 
+                medicine.price.toFixed(2), 
+                discount.toFixed(1), 
+                finalPrice.toFixed(2), 
+                medicine.quantity, 
+                totalPrice.toFixed(2)
+            ];
         });
-    
+
         doc.autoTable({
             head: [headers],
             body: data,
@@ -1028,24 +1114,30 @@ document.addEventListener('DOMContentLoaded', () => {
             theme: 'grid',
             headStyles: { fillColor: [74, 140, 202] },
         });
-    
+
         // Add summary below table
         const totalMedicines = medicines.length;
-        const totalValue = medicines.reduce((sum, medicine) => sum + (medicine.price * medicine.quantity), 0);
+        const totalValue = medicines.reduce((sum, medicine) => {
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            // Calculate final price after discount if not already present
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            return sum + (finalPrice * medicine.quantity);
+        }, 0);
         let finalY = doc.lastAutoTable.finalY + 10;
         doc.text(`Total Medicines: ${totalMedicines}`, 14, finalY);
         doc.text(`Total Price: PKR ${totalValue.toFixed(2)}`, 14, finalY + 10);
-    
+
         // Add footer with name & email
         doc.setFontSize(6);
         doc.text('Developed by Muhammad Kashif Pathan', 14, 285); // Bottom-left
         doc.text('Email: mkpathan.dev@gmail.com', 14, 290);       // Bottom-left just below name
-    
+
         // Save PDF
         doc.save(`medi-record-${new Date().toISOString().split('T')[0]}.pdf`);
         showToast('MediRecord exported to PDF successfully');
     }
-    
+
 
     /**
      * Exports inventory data to Excel file
@@ -1061,32 +1153,41 @@ document.addEventListener('DOMContentLoaded', () => {
         excelContent += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Medical Inventory</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
         excelContent += '<body>';
         excelContent += '<table border="1">';
-        excelContent += '<tr style="background-color: #4a8cca; color: white; font-weight: bold;"><th>Medicine Name</th><th>Price (PKR)</th><th>Quantity</th><th>Total Price (PKR)</th><th>Date/Time</th></tr>';
+        excelContent += '<tr style="background-color: #4a8cca; color: white; font-weight: bold;"><th>Medicine Name</th><th>Price (PKR)</th><th>Discount (%)</th><th>Quantity</th><th>Total Price (PKR)</th></tr>';
 
         // Add data rows
         medicines.forEach(medicine => {
-            const dateObj = new Date(medicine.dateTime);
-            const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString()}`;
-            const totalPrice = medicine.price * medicine.quantity;
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            
+            // Calculate final price after discount if not already present
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            
+            // Calculate total price based on final price and quantity
+            const totalPrice = finalPrice * medicine.quantity;
 
             excelContent += `<tr>
                 <td>${medicine.name}</td>
                 <td>${medicine.price.toFixed(2)}</td>
+                <td>${discount.toFixed(1)}</td>
                 <td>${medicine.quantity}</td>
                 <td>${totalPrice.toFixed(2)}</td>
-                <td>${formattedDate}</td>
             </tr>`;
         });
 
-        // Calculate total inventory value
+        // Calculate total inventory value using final price after discount
         const totalInventoryValue = medicines.reduce((sum, medicine) => {
-            return sum + (medicine.price * medicine.quantity);
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            // Calculate final price after discount if not already present
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            return sum + (finalPrice * medicine.quantity);
         }, 0);
 
         // Add summary rows
-        excelContent += `<tr><td colspan="5"></td></tr>`;
-        excelContent += `<tr><td colspan="3" style="font-weight: bold; text-align: right;">Total Medicines:</td><td>${medicines.length}</td><td></td></tr>`;
-        excelContent += `<tr><td colspan="3" style="font-weight: bold; text-align: right;">Total Inventory Value:</td><td>PKR ${totalInventoryValue.toFixed(2)}</td><td></td></tr>`;
+        excelContent += `<tr><td colspan="6"></td></tr>`;
+        excelContent += `<tr><td colspan="4" style="font-weight: bold; text-align: right;">Total Medicines:</td><td>${medicines.length}</td><td></td></tr>`;
+        excelContent += `<tr><td colspan="4" style="font-weight: bold; text-align: right;">Total Inventory Value:</td><td>PKR ${totalInventoryValue.toFixed(2)}</td><td></td></tr>`;
 
         excelContent += '</table></body></html>';
 
@@ -1150,9 +1251,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <tr>
                             <th>Medicine Name</th>
                             <th>Price (PKR)</th>
+                            <th>Discount (%)</th>
+                            <th>Final Price (PKR)</th>
                             <th>Quantity</th>
                             <th>Total Price (PKR)</th>
-                            <th>Date/Time</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1160,24 +1262,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add data rows
         medicines.forEach(medicine => {
-            const dateObj = new Date(medicine.dateTime);
-            const formattedDate = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-            const totalPrice = medicine.price * medicine.quantity;
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            
+            // Calculate final price after discount if not already present
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            
+            // Calculate total price based on final price and quantity
+            const totalPrice = finalPrice * medicine.quantity;
 
             wordContent += `
                 <tr>
                     <td>${medicine.name}</td>
                     <td>${medicine.price.toFixed(2)}</td>
+                    <td>${discount.toFixed(1)}</td>
+                    <td>${finalPrice.toFixed(2)}</td>
                     <td>${medicine.quantity}</td>
                     <td>${totalPrice.toFixed(2)}</td>
-                    <td>${formattedDate}</td>
                 </tr>
             `;
         });
 
-        // Calculate total inventory value
+        // Calculate total inventory value using final price after discount
         const totalInventoryValue = medicines.reduce((sum, medicine) => {
-            return sum + (medicine.price * medicine.quantity);
+            // Get discount from medicine or default to 0
+            const discount = medicine.discount || 0;
+            // Calculate final price after discount if not already present
+            const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
+            return sum + (finalPrice * medicine.quantity);
         }, 0);
 
         // Add summary
