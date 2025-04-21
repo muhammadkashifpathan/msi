@@ -92,7 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
         "Calcium Tablets",
         "Iron Supplements",
         "ORS Sachets",
-        "Vitamin D3"
+        "Vitamin D3",
+        "Panadol"
     ];
 
     // Populate the datalist with medicine suggestions
