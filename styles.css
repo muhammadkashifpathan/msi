@@ -79,6 +79,11 @@ header {
     gap: 15px;
 }
 
+.app-controls button:hover {
+    background-color: var(--hover-color);
+
+}
+
 .app-icon {
     font-size: 2rem;
     color: var(--primary-color);
@@ -755,4 +760,139 @@ tr:hover td {
     .trash-header {
         padding: 20px 10px;
     }
+}
+
+.calculator {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--container-bg);
+}
+.calculator:hover {
+    background-color: var(--hover-color);
+    cursor: pointer;
+}
+
+.calculator-container {
+    max-width: 400px;
+    padding: 20px;
+    border: 1px solid black;
+    border-radius: 10px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--background-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.calculator-container .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.calculator-container .cal-header h2 {
+    font-size: 1.2rem;
+}
+
+.calculator-container .cal-header button {
+    font-size: 2.5rem;
+}
+
+.row {
+    margin: 6px 0;
+}
+
+.row .input {
+    border-radius: 5px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    padding: 5px 10px;
+    background-color: var(--input-bg);
+    font-family: 'Digital-7';
+}
+
+.row input::placeholder {
+    color: rgb(82, 82, 82);
+}
+
+.screen,
+.calculator-container .buttons {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--container-bg);
+}
+.screen .row input {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+.buttons {
+    border-radius: 0 0 10px 10px;
+    display: grid;
+    font-family: math;
+}
+
+.row {
+    display: flex;
+    gap: 4px;
+}
+
+.row .button {
+    margin: 0 6px;
+    border: 2px solid black;
+    border-radius: 10px;
+    box-shadow: 1px 1px 1px 1px gray;
+    cursor: pointer;
+    width: 8vmin;
+    height: 8vmin;
+    font-weight: bold;
+    font-size: 1rem;
+    text-align: center;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+
+.buttons .row button {
+    padding: 0;
+}
+
+.button:hover {
+    background-color: var(--hover-color);
+}
+.row .red {
+    background-color: red;
+    color: var(--text-color);
+}
+
+.red:hover {
+    background-color: rgb(190, 7, 7);
+}
+
+.row .blue {
+    background-color: var(--primary-color);
+}
+
+.blue:hover{
+    background-color: #6881bc;
+}
+
+@media screen and (max-width: 400px) {
+    .button {
+        height: auto;
+    }
+}
+
+.show {
+    display: none;
 }

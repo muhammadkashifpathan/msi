@@ -31,6 +31,9 @@
                             <span id="trash-counter" class="trash-counter">0</span>
                         </button>
                     </div>
+                    <div class="calculator">
+                        <i class="fas fa-calculator open-calculator-btn"></i>
+                    </div>
                 </div>
             </div>
 
@@ -239,6 +242,50 @@
             <div class="modal-footer">
                 <button id="cancel-delete" class="cancel-btn">Cancel</button>
                 <button id="confirm-delete" class="delete-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="calculator-container show">
+        <div class="cal-header">
+            <h2>Calculator</h2>
+            <button id="close-calculator" class="close-btn close-calculator-btn">&times;</button>
+        </div>
+        <div class="screen">
+            <div class="row">
+                <input type="text" class="input" autofocus readonly placeholder="888888888888888">
+            </div>
+        </div>
+        <div class="buttons">
+            <div class="row">
+                <button class="button red">C</button>
+                <button class="button blue">Del</button>
+                <button class="button blue">%</button>
+                <button class="button blue">*</button>
+            </div>
+            <div class="row">
+                <button class="button">7</button>
+                <button class="button">8</button>
+                <button class="button">9</button>
+                <button class="button blue">/</button>
+            </div>
+            <div class="row">
+                <button class="button">4</button>
+                <button class="button">5</button>
+                <button class="button">6</button>
+                <button class="button blue">+</button>
+            </div>
+            <div class="row">
+                <button class="button">1</button>
+                <button class="button">2</button>
+                <button class="button">3</button>
+                <button class="button blue">-</button>
+            </div>
+            <div class="row">
+                <button class="button">0</button>
+                <button class="button">.</button>
+                <button class="button">00</button>
+                <button class="button blue equal">=</button>
             </div>
         </div>
     </div>
