@@ -320,10 +320,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Get discount from medicine or default to 0
                 const discount = medicine.discount || 0;
-                
+
                 // Calculate final price after discount
                 const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
-                
+
                 // Calculate total price based on final price and quantity
                 const totalPrice = finalPrice * medicine.quantity;
 
@@ -377,10 +377,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Get discount from item or default to 0
                 const discount = item.discount || 0;
-                
+
                 // Calculate final price after discount
                 const finalPrice = item.finalPrice || (item.price - (item.price * discount / 100));
-                
+
                 // Calculate total price based on final price and quantity
                 const totalPrice = finalPrice * item.quantity;
 
@@ -436,32 +436,32 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function updateInventorySummary() {
         const totalMedicines = medicines.length;
-        
+
         // Calculate totals including actual price, discount savings, and final price
         let totalActualValue = 0;
         let totalDiscountValue = 0;
         let totalFinalValue = 0;
-        
+
         medicines.forEach(medicine => {
             // Get discount from medicine or default to 0
             const discount = medicine.discount || 0;
-            
+
             // Calculate actual price (before discount)
             const actualItemTotal = medicine.price * medicine.quantity;
             totalActualValue += actualItemTotal;
-            
+
             // Calculate final price after discount
             const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
             const finalItemTotal = finalPrice * medicine.quantity;
             totalFinalValue += finalItemTotal;
-            
+
             // Calculate discount amount
             totalDiscountValue += (actualItemTotal - finalItemTotal);
         });
 
         // Update the elements
         totalMedicinesEl.textContent = totalMedicines;
-        
+
         // Create a summary with actual, discount, and final prices
         const summaryHTML = `
             <div class="price-breakdown">
@@ -470,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="final-value">Final Price: PKR ${totalFinalValue.toFixed(2)}</div>
             </div>
         `;
-        
+
         totalValueEl.innerHTML = summaryHTML;
     }
 
@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             icon.className = 'fas fa-moon';
         }
-    }    
+    }
 
     /**
      * Exports inventory data to PDF file
@@ -884,10 +884,10 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to print', 'error');
             return;
         }
-    
+
         const printDiv = document.createElement('div');
         printDiv.style.display = 'none';
-    
+
         let tableHTML = `
             <html>
             <head>
@@ -958,19 +958,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     </thead>
                     <tbody>
         `;
-    
+
         let totalActual = 0;
         let totalFinal = 0;
-    
+
         medicines.forEach(medicine => {
             const discount = medicine.discount || 0;
             const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
             const totalPrice = finalPrice * medicine.quantity;
-    
+
             const actualPrice = medicine.price * medicine.quantity;
             totalActual += actualPrice;
             totalFinal += totalPrice;
-    
+
             tableHTML += `
                 <tr>
                     <td>${medicine.name}</td>
@@ -982,9 +982,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             `;
         });
-    
+
         const totalDiscount = totalActual - totalFinal;
-    
+
         tableHTML += `
                     </tbody>
                 </table>
@@ -1001,24 +1001,24 @@ document.addEventListener('DOMContentLoaded', () => {
             </body>
             </html>
         `;
-    
+
         printDiv.innerHTML = tableHTML;
         document.body.appendChild(printDiv);
-    
+
         const win = window.open('', '', 'height=700,width=700');
         win.document.write(tableHTML);
         win.document.close();
-    
+
         win.onload = function () {
             win.focus();
             win.print();
             win.close();
             document.body.removeChild(printDiv);
         };
-    
+
         showToast('MediRecord printed successfully');
     }
-    
+
 
 
     function downloadPDF() {
@@ -1026,27 +1026,27 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to export', 'error');
             return;
         }
-    
+
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-    
+
         // Add title
         doc.setFontSize(18);
         doc.text('Medicine Record Sheet', 105, 20, { align: 'center' });
-    
+
         // Add date
         doc.setFontSize(12);
         doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 30, { align: 'center' });
-    
+
         // Table headers
         const headers = ['Medicine Name', 'Price (PKR)', 'Discount (%)', 'Final Price (PKR)', 'Quantity', 'Total (PKR)'];
-        
+
         // Table data
         const data = medicines.map(med => {
             const discount = med.discount || 0;
             const finalPrice = med.finalPrice || (med.price - (med.price * discount / 100));
             const totalPrice = finalPrice * med.quantity;
-    
+
             return [
                 med.name,
                 med.price.toFixed(2),
@@ -1056,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalPrice.toFixed(2)
             ];
         });
-    
+
         // Add table to PDF
         doc.autoTable({
             head: [headers],
@@ -1065,23 +1065,23 @@ document.addEventListener('DOMContentLoaded', () => {
             theme: 'grid',
             headStyles: { fillColor: [74, 140, 202] }
         });
-    
+
         // Summary calculations
         const totalMedicines = medicines.length;
         let totalActual = 0;
         let totalFinal = 0;
-    
+
         medicines.forEach(med => {
             const discount = med.discount || 0;
             const actual = med.price * med.quantity;
             const final = (med.finalPrice || (med.price - (med.price * discount / 100))) * med.quantity;
-    
+
             totalActual += actual;
             totalFinal += final;
         });
-    
+
         const totalDiscount = totalActual - totalFinal;
-    
+
         // Summary
         const summaryY = doc.lastAutoTable.finalY + 10;
         doc.setFontSize(11);
@@ -1089,17 +1089,17 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.text(`Total Price (Before Discount): PKR ${totalActual.toFixed(2)}`, 14, summaryY + 10);
         doc.text(`Total Discount: PKR ${totalDiscount.toFixed(2)}`, 14, summaryY + 20);
         doc.text(`Total Price (After Discount): PKR ${totalFinal.toFixed(2)}`, 14, summaryY + 30);
-    
+
         // Developer footer
         doc.setFontSize(8);
         doc.text('Developed by Muhammad Kashif Pathan', 105, 285, { align: 'center' });
         doc.text('Email: mkpathan.dev@gmail.com', 105, 290, { align: 'center' });
-    
+
         // Save file
         doc.save(`medi-record-${new Date().toISOString().split('T')[0]}.pdf`);
         showToast('MediRecord exported to PDF successfully');
     }
-    
+
 
 
     /**
@@ -1110,7 +1110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to export', 'error');
             return;
         }
-    
+
         let table = `
             <table>
                 <tr>
@@ -1122,19 +1122,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     <th>Total Price (PKR)</th>
                 </tr>
         `;
-    
+
         let totalActual = 0;
         let totalFinal = 0;
-    
+
         medicines.forEach(medicine => {
             const discount = medicine.discount || 0;
             const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
             const totalPrice = finalPrice * medicine.quantity;
             const actualPrice = medicine.price * medicine.quantity;
-    
+
             totalActual += actualPrice;
             totalFinal += totalPrice;
-    
+
             table += `
                 <tr>
                     <td>${medicine.name}</td>
@@ -1146,9 +1146,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             `;
         });
-    
+
         const totalDiscount = totalActual - totalFinal;
-    
+
         table += `
             </table>
             <br>
@@ -1160,11 +1160,11 @@ document.addEventListener('DOMContentLoaded', () => {
             </table>
             <br><br>
         `;
-    
+
         const blob = new Blob([table], {
             type: 'application/vnd.ms-excel;charset=utf-8;'
         });
-    
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -1172,10 +1172,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-    
+
         showToast('MediRecord exported to Excel successfully');
     }
-    
+
 
     /**
      * Exports inventory data to Word file
@@ -1185,7 +1185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('No data to export', 'error');
             return;
         }
-    
+
         let wordContent = `
             <html xmlns:o='urn:schemas-microsoft-com:office:office'
                   xmlns:w='urn:schemas-microsoft-com:office:word'
@@ -1228,19 +1228,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 </thead>
                 <tbody>
         `;
-    
+
         let totalActual = 0;
         let totalFinal = 0;
-    
+
         medicines.forEach(medicine => {
             const discount = medicine.discount || 0;
             const finalPrice = medicine.finalPrice || (medicine.price - (medicine.price * discount / 100));
             const totalPrice = finalPrice * medicine.quantity;
             const actualPrice = medicine.price * medicine.quantity;
-    
+
             totalActual += actualPrice;
             totalFinal += totalPrice;
-    
+
             wordContent += `
                 <tr>
                     <td>${medicine.name}</td>
@@ -1252,9 +1252,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             `;
         });
-    
+
         const totalDiscount = totalActual - totalFinal;
-    
+
         wordContent += `
                 </tbody>
             </table>
@@ -1266,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
             </body></html>
         `;
-    
+
         const blob = new Blob(['\ufeff', wordContent], { type: 'application/msword' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -1275,12 +1275,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    
+
         showToast('MediRecord exported to Word successfully');
     }
-    
-    
-    
+
+
+
 
     // Initial check for auto-delete
     checkAutoDelete();
@@ -1343,17 +1343,30 @@ document.querySelectorAll('.button').forEach((button) => {
 });
 
 
-const calulatorContainer = document.querySelector('.calculator-container');
+const calculatorContainer = document.querySelector('.calculator-container');
 const openCalculatorBtn = document.querySelector('.open-calculator-btn');
 const closeCalculatorBtn = document.querySelector('.close-calculator-btn');
 
+// Function to open the calculator
 openCalculatorBtn.addEventListener('click', () => {
-    calulatorContainer.classList.remove('show');
-    console.log("open")
-}
-);
+    calculatorContainer.classList.remove('show'); // Show calculator
+    document.body.addEventListener('click', outsideClickListener);
+});
+
+// Function to close the calculator
 closeCalculatorBtn.addEventListener('click', () => {
-    calulatorContainer.classList.add('show');
-    console.log("close")
+    closeCalculator();
+});
+
+// Function to detect clicks outside the calculator
+function outsideClickListener(event) {
+    if (!calculatorContainer.contains(event.target) && !openCalculatorBtn.contains(event.target)) {
+        closeCalculator();
+    }
 }
-);
+
+// Function to actually close and cleanup
+function closeCalculator() {
+    calculatorContainer.classList.add('show'); // Hide calculator
+    document.body.removeEventListener('click', outsideClickListener);
+}
